@@ -1,0 +1,235 @@
+#%RAML 0.8
+title: DSpace REST API
+version: v1
+protocols: [HTTP]
+baseUri: http://localhost:4567
+mediaType: application/json
+documentation:
+- title: A data API for DSpace
+  content: This service exposes item metadata both as a query space, but also
+           as a result description language. One can ask about items matching
+           a metadata statement, and format the results with any defined
+           metadata values the item possesses. It also exposes the data model
+           as a tree of communities/collections, etc
+schemas:
+- item: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "description": "A DSpace item"
+    }
+
+/communities:
+  displayName: Communities
+  description: returns set of communities
+  get:
+    description: returns all the communities in the system
+    responses:
+      200:
+        description: the communities
+  /top-communities:
+    displayName: Top communities
+    description: all the top-level communities in the system
+    get:
+      description: returns the top-level communities
+      responses:
+        200:
+          description: the top-level communities
+  /{communityId}:
+    description: the community id
+    uriParameters:
+      communityId:
+        displayName: Community ID
+        description: primary id of community
+        type: integer
+    get:
+      description: return a community with given id
+      #queryParameters:
+      #  expand:
+      #    description: expanded object sub-graph
+      #    enum: ["parentCommunity", "collections", "subCommunities", "logo", "all"]
+      #    required: false
+      responses:
+        200:
+          description: success
+        404:
+          description: no community with given id
+    /collections:
+      displayName: Community Collections
+      description: Collections belonging to a community
+      get:
+        description: return list of community's collections
+        responses:
+          200:
+            description: the collections
+          404:
+            description: no community
+    /communities:
+      displayName: Community Subcommunities
+      description: Communities belonging to a community
+      get:
+        description: return list of community's sub-communities
+        responses:
+          200:
+            description: the sub-communities
+          404:
+            description: no community
+/collections:
+  displayName: Collections
+  description: returns set of collections
+  get:
+    description: returns all the collections in the system
+    responses:
+      200:
+        description: the collections
+  /{collectionId}:
+    description: the collection id
+    uriParameters:
+      collectionId:
+        displayName: the collection
+        description: returns a given collection
+        type: integer
+    get:
+      description: return a collection with given id
+      queryParameters:
+        expand:
+          description: expanded object sub-graph
+          enum: ["parentCommunityList", "parentCommunity", "items", "license", "logo", "all"]
+          required: false
+      responses:
+        200:
+          description: success
+        404:
+          description: no collection with given id
+    /items:
+      displayName: Collection Items
+      description: Items belonging to a collection
+      get:
+        description: return list of collection's items
+        responses:
+          200:
+            description: the items
+          404:
+            description: no collection
+
+/items:
+  displayName: Items
+  description: returns set of items
+  get:
+    description: returns all the items in the system
+    responses:
+      200:
+        description: the items
+  /{itemId}:
+    description: the item id
+    uriParameters:
+      itemId:
+        displayName: the item
+        description: returns a given item
+        type: integer
+    get:
+      description: return an item with given id
+      responses:
+        200:
+          description: success
+        404:
+          description: no item with given id
+    /bitstreams:
+      displayName: Item Bitstreams
+      description: returns set of bitstreams
+      get:
+        description: returns all the bitstreams for the item
+        responses:
+          200:
+            description: the bitstreams
+          404:
+            description: no item with given id
+    /metadata:
+      displayName: Item metadata
+      description: returns item metadata set
+      get:
+        description: returns all the metadata for the item
+        responses:
+          200:
+            description: the metadata
+          404:
+            description: no item with given id
+
+/bitstreams:
+  displayName: Bitstreams
+  description: returns set of bitstreams
+  get:
+    description: returns all the bitstreams in the system
+    responses:
+      200:
+        description: the bitstreams
+  /{bitstreamId}:
+    description: the bitstream id
+    uriParameters:
+      bitstreamId:
+        displayName: Bitstream
+        description: a bitstream with given id
+        type: integer
+    get:
+      description: returns the bitstream with id
+      responses:
+        200:
+          description: the requested bitstream
+        404:
+          description: no bitstream with identifier
+    /policy:
+      displayName: Bitstream Policy
+      description: polcices for the bitstream
+      get:
+        description: the bitstream policies
+        responses:
+          200:
+            description: the policies
+          404:
+            description: no bitsreeam with given identifier
+
+/handle/{prefix}/{suffix}:
+  description: returns the DSpace Object bearing the handle
+  uriParameters:
+    prefix:
+      description: the CNRI handle prefix
+    suffix:
+      description: the local handle ID
+  get:
+    description: obtains the DSpace Object with given handle
+    responses:
+      200:
+        description: the DSpace Object
+      404:
+        description: no object with given handle
+
+/mama:
+  displayName: Item
+  description: returns zero or more items matching metadata query
+  get:
+    description: returns items matching metadata query
+    queryParameters:
+      qf:
+        type: string
+        description: the name of the query metadata field - as schema.element[.qualifier]
+        required: true
+        example: dc.identifier.uri
+      qv:
+        type: string
+        description: the value of the query metadata field
+        required: true
+        example: http://hdl.handle.net/123456789/1
+      rf:
+        type: string
+        description: the names of the fields to return for matched items
+        example: dc.title
+    responses:
+      200:
+        description: when query is well-formed
+        body:
+          application/json:
+            schema: item
+      400:
+        description: when unknown/invalid query field name requested
+      404:
+        description: when unknown/invalid query field name requested

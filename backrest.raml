@@ -1,0 +1,35 @@
+#%RAML 1.0
+title: DSpace metadata micro API
+version: v1
+protocols: ["HTTP"]
+baseUri: http://repo-dev.mit.edu/mama
+mediaType: application/json
+types:
+  Item:
+    type: object
+  Field:
+    pattern: ^[a-z]*\.[a-z]*(\.[a-z]*)?
+
+/mama:
+  get:
+    description: returns items matching metadata query
+    queryParameters:
+      qf:
+        type: Field
+        description: the name of the query metadata field - schema.element[.qualifier]
+        required: true
+        example: dc.identifier.uri
+      qv:
+        description: the value of the query metadata field
+        required: true
+        example: http://hdl.handle.net/123456789/1
+      rf:
+        type: Field[]
+        description: the names of the fields to return for matched items
+        example: dc.title
+    responses:
+      200:
+        body:
+          type: Item[]
+      400:
+        description: when unknown/invalid query field name requested
