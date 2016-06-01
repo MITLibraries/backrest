@@ -149,6 +149,7 @@ A _GET_ to the base endpoint will return the set of configured resources that de
 A _GET_ to a specific rule resource will return its template and any other related information.
 A _POST_ to the base endpoint will install a new caching rule (template). A _DELETE_ of a given sub-resource
 will remove a rule template, and a _PUT_ to a given rule will clear (invalidate) the cache objects in the given group.
+A _PUT_ to the base endpoint invalidates the entire cache.
 
 The representation of the rule resource (for the GET/POST) is a simple JSON object:
 
