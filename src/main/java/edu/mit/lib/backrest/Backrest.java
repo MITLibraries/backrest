@@ -32,6 +32,9 @@ import static spark.Spark.*;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static com.google.common.base.Strings.*;
 
 import org.slf4j.Logger;
