@@ -31,6 +31,9 @@ import static spark.Spark.*;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static com.google.common.base.Strings.*;
 
 import com.codahale.metrics.Meter;
@@ -62,9 +65,10 @@ public class Backrest {
     private static Meter svcReqs = metrics.meter(name(Backrest.class, "service", "requests"));
     private static Timer respTime = metrics.timer(name(Backrest.class, "service", "responseTime"));
     static String assetLocator;
+    static final Logger LOG = LoggerFactory.getLogger(Backrest.class);
 
     public static void main(String[] args) throws Exception {
-
+        
         Properties props = findConfig(args);
         DBI dbi = new DBI(props.getProperty("dburl"), props);
         assetLocator = props.getProperty("assets");
@@ -80,6 +84,8 @@ public class Backrest {
         if (System.getenv("HONEYBADGER_API_KEY") != null) {
             reporter = new HoneybadgerReporter();
         }
+        
+        LOG.info("Backrest has started. Congratulations!");
 
         before((req, res) -> {
             // Instrument all the things!
