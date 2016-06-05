@@ -8,8 +8,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,9 @@ import org.skife.jdbi.v2.Handle;
 
 import static com.google.common.base.Strings.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -47,10 +51,11 @@ import io.honeybadger.reporter.HoneybadgerReporter;
 import io.honeybadger.reporter.NoticeReporter;
 
 import static edu.mit.lib.backrest.MetadataValue.*;
+import static edu.mit.lib.backrest.Cache.*;
 
 /**
  * Backrest is a read-only DSpace REST API service designed to run
- * on versions of DSpace that do not support the 'offical' REST API.
+ * on versions of DSpace that do not support the 'official' REST API.
  * Read-only means that the only supported method is HTTP GET.
  *
  * @author richardrodgers
@@ -61,6 +66,8 @@ public class Backrest {
     private static MetricRegistry metrics = new MetricRegistry();
     private static Meter svcReqs = metrics.meter(name(Backrest.class, "service", "requests"));
     private static Timer respTime = metrics.timer(name(Backrest.class, "service", "responseTime"));
+    static final Logger logger = LoggerFactory.getLogger(Backrest.class);
+    static final DateTimeFormatter clFmt = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z");
     static String assetLocator;
 
     public static void main(String[] args) throws Exception {
@@ -80,11 +87,19 @@ public class Backrest {
         if (System.getenv("HONEYBADGER_API_KEY") != null) {
             reporter = new HoneybadgerReporter();
         }
+        // If redis service available, use it for caching, else local
+        boolean doCaching = System.getenv("BACKREST_CACHE") != null;
+        if (doCaching && System.getenv("BACKREST_REDIS_HOST") != null) {
+            setCache("redis");
+        } else if (doCaching) {
+            setCache("local");
+        }
 
         before((req, res) -> {
             // Instrument all the things!
             svcReqs.mark();
             req.attribute("timerCtx", respTime.time());
+            getIfCachable(req);
         });
 
         get("/ping", (req, res) -> {
@@ -117,12 +132,34 @@ public class Backrest {
                 }
             } finally {
                 if (auth) {
+                    shutdownCache();
                     stop();
                 }
             }
         });
 
+        get("/cache", (req, res) -> {
+            if (cacheActive()) {
+                return dataToMedia(req, res, cacheStatus());
+            } else {
+                res.status(404);
+                return "Cache not active";
+            }
+        });
+
+        post("/cache", (req, res) -> {
+            if (cacheActive()) {
+                cacheControl(req.queryParams("command"));
+                res.status(202);
+                return "Cache command received";
+            } else {
+                res.status(404);
+                return "Cache not active";
+            }
+        });
+
         get("/handle/:prefix/:suffix", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 String handle = req.params(":prefix") + "/" + req.params(":suffix");
                 DSpaceObject dso = DSpaceObject.findByHandle(hdl, handle);
@@ -144,6 +181,7 @@ public class Backrest {
         });
 
         get("/communities", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 List<Community> comms = Community.findAll(hdl, false, req.queryMap());
                 return acceptXml(req) ? dataToXml(res, new Community.XList(comms)) :
@@ -154,6 +192,7 @@ public class Backrest {
         });
 
         get("/communities/top-communities", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 List<Community> comms = Community.findAll(hdl, true, req.queryMap());
                 return acceptXml(req) ? dataToXml(res, new Community.XList(comms)) :
@@ -164,6 +203,7 @@ public class Backrest {
         });
 
         get("/communities/:communityId", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Community comm = Community.findById(hdl, Integer.valueOf(req.params(":communityId")), req.queryMap());
                 if (comm == null) {
@@ -178,6 +218,7 @@ public class Backrest {
         });
 
         get("/communities/:communityId/collections", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Community comm = Community.findById(hdl, Integer.valueOf(req.params(":communityId")), req.queryMap());
                 if (comm == null) {
@@ -194,6 +235,7 @@ public class Backrest {
         });
 
         get("/communities/:communityId/communities", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Community comm = Community.findById(hdl, Integer.valueOf(req.params(":communityId")), req.queryMap());
                 if (comm == null) {
@@ -210,6 +252,7 @@ public class Backrest {
         });
 
         get("/collections", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 List<Collection> colls = Collection.findAll(hdl);
                 return acceptXml(req) ? dataToXml(res, new Collection.XList(colls)) :
@@ -220,6 +263,7 @@ public class Backrest {
         });
 
         get("/collections/:collectionId", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Collection coll = Collection.findById(hdl, Integer.valueOf(req.params(":collectionId")), req.queryMap());
                 if (coll == null) {
@@ -234,6 +278,7 @@ public class Backrest {
         });
 
         get("/collections/:collectionId/items", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Collection coll = Collection.findById(hdl, Integer.valueOf(req.params(":collectionId")), null);
                 if (coll == null) {
@@ -250,6 +295,7 @@ public class Backrest {
         });
 
         get("/items", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 List<Item> items = Item.findAll(hdl);
                 return acceptXml(req) ? dataToXml(res, new Item.XList(items)) :
@@ -260,6 +306,7 @@ public class Backrest {
         });
 
         get("/items/:itemId", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Item item = Item.findById(hdl, Integer.valueOf(req.params(":itemId")), req.queryMap());
                 if (item == null) {
@@ -274,6 +321,7 @@ public class Backrest {
         });
 
         get("/items/:itemId/metadata", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Item item = Item.findById(hdl, Integer.valueOf(req.params(":itemId")), req.queryMap());
                 if (item == null) {
@@ -290,6 +338,7 @@ public class Backrest {
         });
 
         get("/items/:itemId/bitstreams", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Item item = Item.findById(hdl, Integer.valueOf(req.params(":itemId")), req.queryMap());
                 if (item == null) {
@@ -306,6 +355,7 @@ public class Backrest {
         });
 
         get("/bitstreams", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 List<Bitstream> bitstreams = Bitstream.findAll(hdl);
                 return acceptXml(req) ? dataToXml(res, new Bitstream.XList(bitstreams)) :
@@ -316,6 +366,7 @@ public class Backrest {
         });
 
         get("/bitstreams/:bitstreamId", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Bitstream bitstream = Bitstream.findById(hdl, Integer.valueOf(req.params(":bitstreamId")), req.queryMap());
                 if (bitstream == null) {
@@ -330,6 +381,7 @@ public class Backrest {
         });
 
         get("/bitstreams/:bitstreamId/policy", (req, res) -> {
+            if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 Bitstream bitstream = Bitstream.findById(hdl, Integer.valueOf(req.params(":bitstreamId")), req.queryMap());
                 if (bitstream == null) {
@@ -369,6 +421,7 @@ public class Backrest {
             if (isNullOrEmpty(req.queryParams("qf")) || isNullOrEmpty(req.queryParams("qv"))) {
                 halt(400, "Must supply field and value query parameters 'qf' and 'qv'");
             }
+            //if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
                 if (findFieldId(hdl, req.queryParams("qf")) != -1) {
                     List<String> results = findItems(hdl, req.queryParams("qf"), req.queryParams("qv"), req.queryParamsValues("rf"));
@@ -392,13 +445,24 @@ public class Backrest {
             }
         });
 
+        enableRouteOverview("/debug/routes");
+
+        get("*", (req, res) -> {
+            res.status(404);
+            return "No such page";
+        });
+
         after((req, res) -> {
             Timer.Context context = (Timer.Context)req.attribute("timerCtx");
             context.stop();
+            remember(req, res.body());
+            // log each request, in more or less 'CLF' aka Apache format
+            String clfTime = ZonedDateTime.now().format(clFmt);
+            logger.info("{} - - [{}] \"{} {} {}\" {} {}", req.ip(), clfTime, req.requestMethod(),
+                        req.pathInfo(), req.protocol(), res.raw().getStatus(), res.body().length());
         });
 
         awaitInitialization();
-        enableRouteOverview("/debug/routes");
     }
 
     private static String internalError(Exception e, Response res) {
@@ -438,6 +502,15 @@ public class Backrest {
         return accept != null && accept.contains("application/xml");
     }
 
+    static String responseContentType(Request req) {
+        String accept = req.headers("Accept");
+        if (accept != null && accept.contains("application/xml")) {
+            return "application/xml";
+        } else {
+            return "application/json"; // default
+        }
+    }
+
     private static String dataToMedia(Request req, Response res, Object data) {
         String accept = req.headers("Accept");
         if (null == accept || accept.contains("application/json")) {
@@ -458,7 +531,7 @@ public class Backrest {
             mapper.writeValue(sw, data);
             return sw.toString();
         } catch (IOException e) {
-            throw new RuntimeException("IOException from a StringWriter: " + e.getMessage());
+            throw new RuntimeException("IOException from ObjectMapper: " + e.getMessage());
         }
     }
 

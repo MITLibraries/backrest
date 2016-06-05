@@ -125,6 +125,13 @@ public class BackrestTest {
     }
 
     @Test
+    public void metricsRequest() throws IOException {
+        String url = TEST_SVC_URL + "/metrics";
+        HttpResponse response = baseClient.execute(new HttpGet(url));
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+    }
+
+    @Test
     public void basicRequest() throws IOException {
         String url = TEST_SVC_URL + "/mama?qf=dc.identifier.uri&qv=http://hdl.handle.net/123456789/3";
         HttpResponse response = baseClient.execute(new HttpGet(url));
