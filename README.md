@@ -97,6 +97,27 @@ by requesting the URL:
 Best practice is periodically to rotate the key, etc. Remote shutdown is entirely optional, but can be useful in
 environments where service provisioning is automated.
 
+## Data Caching ##
+
+Repository data such as found in DSpace is typically quite static: content is gradually added, but existing
+content is seldom changed or removed, at least relative to the number of times it is accessed. This comparative
+stability means that a data API service can make effective use of cached responses - the cache will not often
+need to be invalidated due to change or removal. Data caching is enabled via an environment variable:
+
+    BACKREST_CACHE=1000:d10
+
+where the number before the colon is the maximum number of entries in the cache, and the number
+after the colon is the eviction policy (after x units of time and no access, the cache may remove the document).
+Both are optional, so the value ':' means a cache of unlimited size and duration.
+Possible values for the eviction time units are: _s_(econd), _m_(inute), _h_(our), and _d_(ay).
+The cache is managed via the 'cache' endpoint:
+
+    http://backrest.my.edu/cache
+
+where the permitted operations are _GET_ to obtain status about the cache, or _POST_ to send a command to
+the cache. The only supported command currently is 'flush', which will empty the entire cache. Also note
+that the response cache only manages _documents_ (the XML or JSON responses): bitstreams are not cached.
+
 ## Advanced Features - External Service Integration ##
 
 Backrest is completely functional without reliance on any other infrastructure. But if desired, you can
@@ -124,40 +145,16 @@ to locally manage log files, and provide integrated tools for search and analyti
 Backrest writes to a small local file that can be 'tailed' to such a service. One such integration is
 described here, but many others could be implemented instead.
 
-### Application Data Caching ###
+### External Data Caching ###
 
-Repository data such as found in DSpace is typically quite static: content is gradually added, but existing
-content is seldom changed or removed - at least, relative to the number of times it is accessed. This comparative
-stability means that a data API service could make effective use of cached responses - since that cache will not often be
-invalidated due to change or removal. Backrest will utilize a Redis-backed cache of the formatted XML or JSON documents
-if configured with the environment variable:
+Backrest will utilize a Redis-backed cache of the formatted XML or JSON response documents if configured with
+the environment variable:
 
-    BACKREST_REDIS_URI=http://localhost:4565
+    BACKREST_REDIS_HOST=localhost
 
 You must independently install and configure Redis, but it need not reside on the same server as backrest.
-The cache is managed via the 'cache' endpoint:
-
-    http://backrest.my.edu/cache
-
-Each resource under _cache_ represents a rule or policy on what responses to cache. The rule is
-expressed as a URI template. For example, the 'community' rule might have a template:
-
-    communities/**
-
-which means that all URIs matching that template will cache responses. The supported operations are as follows:
-A _GET_ to the base endpoint will return the set of configured resources that define the current caching rules.
-A _GET_ to a specific rule resource will return its template and any other related information.
-A _POST_ to the base endpoint will install a new caching rule (template). A _DELETE_ of a given sub-resource
-will remove a rule template, and a _PUT_ to a given rule will clear (invalidate) the cache objects in the given group.
-A _PUT_ to the base endpoint invalidates the entire cache.
-
-The representation of the rule resource (for the GET/POST) is a simple JSON object:
-
-    {
-      "rule": "community",
-      "template": "communities/**"
-    }
-
+Use of this variable will supersede any local cache, in that the redis cache will be used, not
+a local one.
 
 ## From the Source ##
 
