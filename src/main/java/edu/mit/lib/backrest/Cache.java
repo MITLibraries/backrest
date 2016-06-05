@@ -54,13 +54,13 @@ public class Cache {
         CacheBuilder builder = CacheBuilder.newBuilder();
         String maxEntries = policies.next();
         if (! isNullOrEmpty(maxEntries)) {
-            builder.maximumSize(Long.valueOf(maxEntries));
+            builder = builder.maximumSize(Long.valueOf(maxEntries));
         }
         String retain = policies.next();
         if (! isNullOrEmpty(retain)) {
             int len = retain.length();
             TimeUnit tu = getUnit(retain.charAt(len-1));
-            builder.expireAfterAccess(Long.valueOf(retain.substring(0, len-1)), tu);
+            builder = builder.expireAfterAccess(Long.valueOf(retain.substring(0, len-1)), tu);
         }
         localCache = builder.build();
     }

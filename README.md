@@ -104,7 +104,7 @@ content is seldom changed or removed, at least relative to the number of times i
 stability means that a data API service can make effective use of cached responses - the cache will not often
 need to be invalidated due to change or removal. Data caching is enabled via an environment variable:
 
-    BACKREST_CACHE=1000:d10
+    BACKREST_CACHE=1000:10d
 
 where the number before the colon is the maximum number of entries in the cache, and the number
 after the colon is the eviction policy (after x units of time and no access, the cache may remove the document).
