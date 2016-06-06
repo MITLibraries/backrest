@@ -254,7 +254,7 @@ public class Backrest {
         get("/collections", (req, res) -> {
             if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
-                List<Collection> colls = Collection.findAll(hdl);
+                List<Collection> colls = Collection.findAll(hdl, req.queryMap());
                 return acceptXml(req) ? dataToXml(res, new Collection.XList(colls)) :
                                         dataToJson(res, colls);
             } catch (Exception e) {
@@ -297,7 +297,7 @@ public class Backrest {
         get("/items", (req, res) -> {
             if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
-                List<Item> items = Item.findAll(hdl);
+                List<Item> items = Item.findAll(hdl, req.queryMap());
                 return acceptXml(req) ? dataToXml(res, new Item.XList(items)) :
                                         dataToJson(res, items);
             } catch (Exception e) {
@@ -357,7 +357,7 @@ public class Backrest {
         get("/bitstreams", (req, res) -> {
             if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
-                List<Bitstream> bitstreams = Bitstream.findAll(hdl);
+                List<Bitstream> bitstreams = Bitstream.findAll(hdl, req.queryMap());
                 return acceptXml(req) ? dataToXml(res, new Bitstream.XList(bitstreams)) :
                                         dataToJson(res, bitstreams);
             } catch (Exception e) {
@@ -579,5 +579,15 @@ public class Backrest {
             canExpand.removeAll(toExpand);
         }
         return toExpand;
+    }
+
+    static int limitFromParam(QueryParamsMap params) {
+        String limit = params.value("limit");
+        return isNullOrEmpty(limit) ? 100 : Integer.valueOf(limit);
+    }
+
+    static int offsetFromParam(QueryParamsMap params) {
+        String offset = params.value("offset");
+        return isNullOrEmpty(offset) ? 0 : Integer.valueOf(offset);
     }
 }

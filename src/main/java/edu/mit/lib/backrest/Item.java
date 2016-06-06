@@ -56,9 +56,12 @@ public class Item extends DSpaceObject {
         this.bitstreams = bitstreams;
     }
 
-    static List<Item> findAll(Handle hdl) {
-        String queryString = SELECT + "where in_archive='1'";
+    static List<Item> findAll(Handle hdl, QueryParamsMap params) {
+        String queryString = SELECT + "where in_archive='1' order by name limit ? offset ?";
+        int limit = Backrest.limitFromParam(params);
+        int offset = Backrest.offsetFromParam(params);
         return hdl.createQuery(queryString)
+                  .bind(0, limit).bind(1, offset)
                   .map(new ItemMapper(hdl, null)).list();
     }
 

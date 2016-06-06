@@ -88,8 +88,11 @@ public class Bitstream extends DSpaceObject {
         this.policies = policies;
     }
 
-    static List<Bitstream> findAll(Handle hdl) {
-        return hdl.createQuery(SELECT)
+    static List<Bitstream> findAll(Handle hdl, QueryParamsMap params) {
+        int limit = Backrest.limitFromParam(params);
+        int offset = Backrest.offsetFromParam(params);
+        return hdl.createQuery(SELECT + "order by name limit ? offset ?")
+                  .bind(0, limit).bind(1, offset)
                   .map(new BitstreamMapper(hdl, null)).list();
     }
 
