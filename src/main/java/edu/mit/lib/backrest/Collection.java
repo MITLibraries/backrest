@@ -61,9 +61,12 @@ public class Collection extends DSpaceObject {
         this.logo = logo;
     }
 
-    static List<Collection> findAll(Handle hdl) {
-        String queryString = SELECT + "order by name";
+    static List<Collection> findAll(Handle hdl, QueryParamsMap params) {
+        String queryString = SELECT + "order by name limit ? offset ?";
+        int limit = Backrest.limitFromParam(params);
+        int offset = Backrest.offsetFromParam(params);
         return hdl.createQuery(queryString)
+                  .bind(0, limit).bind(1, offset)
                   .map(new CollectionMapper(hdl, null)).list();
     }
 

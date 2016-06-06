@@ -122,7 +122,7 @@ public class Cache {
 
     static void remember(Request req, String response) {
         if ("miss".equals((String)req.attribute("cacheCtl"))) {
-            String key = req.url() + Backrest.responseContentType(req);
+            String key = cacheKey(req);
             if (localCache != null) {
                 localCache.put(key, response);
                 localSize += response.length();
@@ -174,6 +174,10 @@ public class Cache {
         return localCache != null || pool != null;
     }
 
+    private static String cacheKey(Request req) {
+        return req.url() + req.queryString() + Backrest.responseContentType(req);
+    }
+
     private static boolean cacheable(Request req) {
         if (cacheActive()) {
             String path = req.pathInfo();
@@ -185,7 +189,7 @@ public class Cache {
 
     private static String get(Request req) {
         // key is request URL + response content type
-        String key = req.url() + Backrest.responseContentType(req);
+        String key = cacheKey(req);
         if (localCache != null) {
             return localCache.getIfPresent(key);
         } else if (pool != null) {

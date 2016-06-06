@@ -63,8 +63,11 @@ public class Community extends DSpaceObject {
         if (topOnly) {
             queryString += ONLY_TOP;
         }
-        queryString += "order by name";
+        queryString += "order by name limit ? offset ?";
+        int limit = Backrest.limitFromParam(params);
+        int offset = Backrest.offsetFromParam(params);
         return hdl.createQuery(queryString)
+                  .bind(0, limit).bind(1, offset)
                   .map(new CommunityMapper(hdl, params)).list();
     }
 
