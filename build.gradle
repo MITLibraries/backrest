@@ -13,11 +13,14 @@ repositories {
 
 dependencies {
     compile 'com.sparkjava:spark-core:2.5'
+    compile 'org.codehaus.janino:janino:2.7.8'
     compile 'org.jdbi:jdbi:2.70'
+    compile 'org.logback-extensions:logback-ext-loggly:0.1.2'
     compile 'org.postgresql:postgresql:9.4-1206-jdbc42'
     compile 'com.google.guava:guava:18.0'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.7.4'
     compile 'ch.qos.logback:logback-classic:1.1.7'
+    compile 'org.logback-extensions:logback-ext-loggly:0.1.2'
     compile 'io.honeybadger:honeybadger-java:1.1.0'
     compile 'redis.clients:jedis:2.8.1'
     compile 'io.dropwizard.metrics:metrics-jdbi:3.1.2'
@@ -29,8 +32,10 @@ dependencies {
 }
 
 task fatJar(type: Jar) {
+
     manifest { attributes("Main-Class": "edu.mit.lib.backrest.Backrest") }
     baseName = archivesBaseName + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude "META-INF/*.RSA", "META-INF/*.SF","META-INF/*.DSA"
     with jar
 }

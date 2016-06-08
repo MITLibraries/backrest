@@ -2,9 +2,11 @@
 .gradle/
 build/
 gradle*
+.nb-gradle*
 
 # IDEA
 .idea/
 *.iml
 
 .DS_Store
+/.nb-gradle/
