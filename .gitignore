@@ -2,6 +2,7 @@
 .gradle/
 build/
 gradle*
+.nb-gradle*
 
 # IDEA
 .idea/
