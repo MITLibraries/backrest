@@ -145,7 +145,9 @@ to locally manage log files, and provide integrated tools for search and analyti
 Backrest writes to a small local file that can be 'tailed' to such a service. One such integration is
 described here, but many others could be implemented instead.
 By default, backrest logs to STDOUT but can be configured to write to Loggly <https://www.loggly.com/> by setting an environment variable with the service-assigned customer token:
-    LOGGLY_TOKEN=token
+```
+LOGGLY_TOKEN=token
+```
 
 ### External Data Caching ###
 
