@@ -19,6 +19,30 @@ schemas:
       "description": "A DSpace item"
     }
 
+/ping:
+  description: basic server health check
+  get:
+    description: request feedback from backrest server
+    responses:
+      200:
+        description: should always return if server is up
+
+/metrics:
+  description: server metrics
+  get:
+    description: statistical info on request processing
+    responses:
+      200:
+        description: JSON report
+
+/status:
+  description: the authentication status of user
+  get:
+    description: authentication status
+    responses:
+      200:
+        description: JSON report
+
 /communities:
   displayName: Communities
   description: returns set of communities
