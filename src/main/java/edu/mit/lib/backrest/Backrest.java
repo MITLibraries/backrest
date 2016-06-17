@@ -7,19 +7,26 @@ package edu.mit.lib.backrest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
 
 import javax.servlet.ServletOutputStream;
 
@@ -32,6 +39,8 @@ import static spark.Spark.*;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import static com.google.common.base.Strings.*;
 
 import org.slf4j.Logger;
@@ -63,9 +72,10 @@ import static edu.mit.lib.backrest.Cache.*;
 public class Backrest {
 
     private static NoticeReporter reporter;
-    private static MetricRegistry metrics = new MetricRegistry();
-    private static Meter svcReqs = metrics.meter(name(Backrest.class, "service", "requests"));
-    private static Timer respTime = metrics.timer(name(Backrest.class, "service", "responseTime"));
+    private static final MetricRegistry metrics = new MetricRegistry();
+    private static final Meter svcReqs = metrics.meter(name(Backrest.class, "service", "requests"));
+    private static final Timer respTime = metrics.timer(name(Backrest.class, "service", "responseTime"));
+    private static final Map<String, String> tokenMap = new ConcurrentHashMap<>();
     static final Logger logger = LoggerFactory.getLogger(Backrest.class);
     static final DateTimeFormatter clFmt = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z");
     static String assetLocator;
@@ -156,6 +166,56 @@ public class Backrest {
                 res.status(404);
                 return "Cache not active";
             }
+        });
+
+        post("/login", (req, res) -> {
+            try (Handle hdl = dbi.open()) {
+                Security.User user = userFromXml(req);
+                String fullName = user.authenticate(hdl);
+                if (fullName != null) {
+                    // if already logged in - don't mint a new token
+                    String token = null;
+                    String value = Joiner.on("||").join(user.email, fullName);
+                    if (! tokenMap.containsValue(value)) {
+                        token = UUID.randomUUID().toString();
+                        tokenMap.put(token, value);
+                    } else {
+                        // find it in map - ugh
+                        token = tokenMap.entrySet().stream().filter(e -> e.getValue().equals(user.email))
+                                        .collect(Collectors.toList()).get(0).getKey();
+                    }
+                    return token;
+                } else {
+                    res.status(403);
+                    return "No valid credentials given";
+                }
+            } catch (Exception e) {
+                return internalError(e, res);
+            }
+        });
+
+        post("/logout", (req, res) -> {
+            String token = req.headers("rest-dspace-token");
+            if (token != null && tokenMap.containsKey(token)) {
+                tokenMap.remove(token);
+                return "So long!";
+            } else {
+                res.status(400);
+                return "Missing or unknown token";
+            }
+        });
+
+        get("/status", (req, res) -> {
+            String token = req.headers("rest-dspace-token");
+            Object status = new Status();
+            if (token != null) {
+                String statStr = tokenMap.get(token);
+                if (statStr != null)  {
+                    Iterator<String> parts = Splitter.on("||").split(statStr).iterator();
+                    status = new Status(parts.next(), parts.next(), token);
+                }
+            }
+            return dataToMedia(req, res, status);
         });
 
         get("/handle/:prefix/:suffix", (req, res) -> {
@@ -549,6 +609,17 @@ public class Backrest {
         }
     }
 
+    private static Security.User userFromXml(Request req) {
+        try {
+            JAXBContext context = JAXBContext.newInstance(Security.User.class);
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            StringBuffer xmlStr = new StringBuffer(req.body());
+            return (Security.User)unmarshaller.unmarshal(new StreamSource(new StringReader(xmlStr.toString())));
+        } catch (Exception e) {
+            throw new RuntimeException("JAXB Exception: " + e.getMessage());
+        }
+    }
+
     private static String jsonValue(String name, String value, boolean primitive) {
         StringBuilder sb = new StringBuilder();
         sb.append("\"").append(name).append("\": ");
@@ -589,5 +660,28 @@ public class Backrest {
     static int offsetFromParam(QueryParamsMap params) {
         String offset = params.value("offset");
         return isNullOrEmpty(offset) ? 0 : Integer.valueOf(offset);
+    }
+
+    @XmlRootElement(name="status")
+    static class Status {
+
+        public boolean ok;
+        public boolean authenticated;
+        public String email;
+        public String fullname;
+        public String token;
+
+        Status() {
+            this.ok = true;
+            this.authenticated = false;
+        }
+
+        Status(String email, String fullname, String token) {
+            this.ok = true;
+            this.authenticated = true;
+            this.email = email;
+            this.fullname = fullname;
+            this.token = token;
+        }
     }
 }

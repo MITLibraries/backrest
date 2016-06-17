@@ -222,7 +222,7 @@ public class Cache {
         }
     }
 
-    @XmlRootElement
+    @XmlRootElement(name="cacheStatus")
     static class Status {
 
         public int entries;

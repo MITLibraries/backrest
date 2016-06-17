@@ -4,7 +4,9 @@
  */
 package edu.mit.lib.backrest;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.EnumSet;
 
 import org.skife.jdbi.v2.DBI;
@@ -21,6 +23,10 @@ import static guru.nidi.ramltester.junit.RamlMatchers.*;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 import org.h2.jdbcx.JdbcConnectionPool;
 
@@ -29,6 +35,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import edu.mit.lib.backrest.Backrest;
 /**
@@ -107,6 +114,8 @@ public class BackrestTest {
            hdl.execute("insert into bitstreamformatregistry (bitstream_format_id, mimetype, short_description, description) values(1, 'text/plain', 'text', 'text')");
            hdl.execute("create table resourcepolicy (policy_id int primary key, resource_type_id int, resource_id int, action_id int, eperson_id int, epersongroup_id int, rpname varchar, rptype varchar, rpdescription varchar)");
            hdl.execute("insert into resourcepolicy (policy_id, resource_type_id, resource_id, action_id, eperson_id, epersongroup_id, rpname, rptype, rpdescription) values(1, 0, 1, 0, 1, 1, 'wtf', 'wttype', 'Im a resource policy')");
+           hdl.execute("create table eperson (eperson_id int primary key, email varchar, firstname varchar, lastname varchar, password varchar, salt varchar)");
+           hdl.execute("insert into eperson (eperson_id, email, firstname, lastname, password, salt) values(1, 'bmbf@mit.edu', 'Boaty', 'McBoatface', 'A8AF6D427401D0F3267B8F4A2082828D', '530BBEC3D2FF6434EFC7F1F2E57F6BF6')");
         }
         // launch API service
         Backrest.main(new String[] {TEST_DB_URL, "username", "password"});
@@ -118,16 +127,16 @@ public class BackrestTest {
     }
 
     @Test
-    public void pingRequest() throws IOException {
-        String url = TEST_SVC_URL + "/ping";
+    public void cacheRequest() throws IOException {
+        String url = TEST_SVC_URL + "/cache";
         HttpResponse response = baseClient.execute(new HttpGet(url));
-        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        assertEquals(response.getStatusLine().getStatusCode(), 404);
     }
 
     @Test
-    public void metricsRequest() throws IOException {
-        String url = TEST_SVC_URL + "/metrics";
-        HttpResponse response = baseClient.execute(new HttpGet(url));
+    public void statusRequest() throws IOException {
+        String statusUrl = TEST_SVC_URL + "/status";
+        HttpResponse response = baseClient.execute(new HttpGet(statusUrl));
         assertEquals(response.getStatusLine().getStatusCode(), 200);
     }
 
@@ -136,6 +145,60 @@ public class BackrestTest {
         String url = TEST_SVC_URL + "/mama?qf=dc.identifier.uri&qv=http://hdl.handle.net/123456789/3";
         HttpResponse response = baseClient.execute(new HttpGet(url));
         assertThat(baseClient.getLastReport(), checks());
+    }
+
+    @Test
+    public void loginFail() throws IOException {
+        CloseableHttpClient client = HttpClients.createDefault();
+        String url = TEST_SVC_URL + "/login";
+        HttpPost post = new HttpPost(url);
+        post.setEntity(new StringEntity("<user><email>bmbf@mit.edu</email><password>wrong</password></user>"));
+        HttpResponse response = client.execute(post);
+        assertEquals(response.getStatusLine().getStatusCode(), 403);
+        // verify status is unauthenticated
+        url = TEST_SVC_URL + "/status";
+        response = client.execute(new HttpGet(url));
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        assertTrue(baos.toString().contains("false"));
+    }
+
+    @Test
+    public void loginSuccess() throws IOException {
+        CloseableHttpClient client = HttpClients.createDefault();
+        String url = TEST_SVC_URL + "/login";
+        HttpPost post = new HttpPost(url);
+        post.setEntity(new StringEntity("<user><email>bmbf@mit.edu</email><password>secret</password></user>"));
+        HttpResponse response = client.execute(post);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        String token = baos.toString();
+        baos.close();
+        // verify status is authenticated
+        url = TEST_SVC_URL + "/status";
+        HttpGet statGet = new HttpGet(url);
+        statGet.addHeader("rest-dspace-token", token);
+        response = client.execute(statGet);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        assertTrue(baos.toString().contains("true"));
+        baos.close();
+        // logout
+        url = TEST_SVC_URL + "/logout";
+        post = new HttpPost(url);
+        post.addHeader("rest-dspace-token", token);
+        post.setEntity(new StringEntity("foo"));
+        response = client.execute(post);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        // verify status is unauthenticated
+        response = client.execute(statGet);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        assertTrue(baos.toString().contains("false"));
     }
 
     @Test
@@ -155,6 +218,7 @@ public class BackrestTest {
         final RamlHttpClient client = baseClient.aggregating(aggregator);
 
         // URLs must collectively trigger full set of API behaviors as described by spec
+        send(client, TEST_SVC_URL + "/ping");
         // missing required query parameter 'qf' - should return 400 response code
         send(client, TEST_SVC_URL + "/mama?qv=http://hdl.handle.net/123456789/3");
         // required query parameter 'qf' lacking value - should return 400 response code
@@ -241,6 +305,8 @@ public class BackrestTest {
         // dereference a handle that exists, and one that doesn't
         send(client, TEST_SVC_URL + "/handle/123456789/15");
         send(client, TEST_SVC_URL + "/handle/123432/234234");
+        send(client, TEST_SVC_URL + "/metrics");
+        send(client, TEST_SVC_URL + "/status");
         assertUsage(aggregator.getUsage(), EnumSet.allOf(UsageItem.class));
     }
 
@@ -251,6 +317,14 @@ public class BackrestTest {
         final HttpResponse response = client.execute(get);
         //log.info("Result:      " + response.getStatusLine() + (response.getEntity() == null ? "" : EntityUtils.toString(response.getEntity())));
         //log.info("Raml report: " + client.getLastReport());
+    }
+
+    private void psend(RamlHttpClient client, String request, String body) throws IOException {
+        final HttpPost post = new HttpPost(request);
+        //log.info("pSend:        " + request);
+        post.addHeader("Accept", mimeType);
+        post.setEntity(new StringEntity(body));
+        final HttpResponse response = client.execute(post);
     }
 
     private void assertUsage(Usage usage, EnumSet<UsageItem> usageItems) {
