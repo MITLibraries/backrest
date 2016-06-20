@@ -10,8 +10,9 @@ backrest is an API server for the read-only side of the 5.X DSpace REST API.
 The sole requirement is a Java8 VM on which to run the service (and of course,
 a DSpace instance with which to interact). Since backrest and DSpace run on distinct JVMs,
 there is no restriction on the java version DSpace uses. However, only DSpace instances
-using PostgreSQL as a database are supported. If you wish to build from source,
-you will also need the Gradle build tool installed.
+using PostgreSQL as a database are supported. In addition, the range of DSpace versions
+backrest will support is 1.4 to 4.x (at 5.x+, you of course have the full native REST API available).
+If you wish to build from source, you will also need the Gradle build tool installed.
 
 ## Deployment ##
 

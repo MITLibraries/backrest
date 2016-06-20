@@ -46,15 +46,18 @@ public class Security {
             // NB: several simplifying assumptions here
             Eperson eperson = Eperson.findByEmail(hdl, email);
             if (eperson != null) {
-                // verify password
-                try {
-                    if (Arrays.equals(digest(password, DatatypeConverter.parseHexBinary(eperson.salt)),
-                        DatatypeConverter.parseHexBinary(eperson.password))) {
-                        return eperson.fullName;
+                try { // verify password
+                    if (Backrest.version < 30) { // no salt added
+                        if (DatatypeConverter.printHexBinary(digestUnsalted(password)).equals(eperson.password)) {
+                            return eperson.fullName;
+                        }
+                    } else {
+                        if (Arrays.equals(digestSalted(password, DatatypeConverter.parseHexBinary(eperson.salt)),
+                            DatatypeConverter.parseHexBinary(eperson.password))) {
+                            return eperson.fullName;
+                        }
                     }
-                } catch (Exception e) {
-                    return null;
-                }
+                } catch (Exception e) {} // return null below
             }
             return null;
         }
@@ -63,12 +66,21 @@ public class Security {
     static class EpersonMapper implements ResultSetMapper<Eperson> {
         @Override
         public Eperson map(int index, ResultSet rs, StatementContext ctx) throws SQLException {
+            if (Backrest.version < 30) { // salted encryption added in 3.0
+                return new Eperson(rs.getString("email"), rs.getString("password"), "",
+                                   rs.getString("firstname"), rs.getString("lastname"));
+            }
             return new Eperson(rs.getString("email"), rs.getString("password"), rs.getString("salt"),
                                rs.getString("firstname"), rs.getString("lastname"));
         }
     }
 
-    public static byte[] digest(String secret, byte[] salt) throws Exception {
+    static byte[] digestUnsalted(String secret) throws Exception {
+        MessageDigest digester = MessageDigest.getInstance("MD5");
+        return digester.digest(secret.getBytes(UTF_8));
+    }
+
+    static byte[] digestSalted(String secret, byte[] salt) throws Exception {
         MessageDigest digester = MessageDigest.getInstance("MD5");
         digester.update(salt);
         digester.update(secret.getBytes(UTF_8));
@@ -83,7 +95,7 @@ public class Security {
     static String passwordProfile(String secret) throws Exception {
         byte[] salt = new byte[128/8];
         rng.nextBytes(salt);
-        byte[] digestBytes = digest(secret, salt);
+        byte[] digestBytes = digestSalted(secret, salt);
         return "Secret: " + secret +
                " Salt: " + DatatypeConverter.printHexBinary(salt) +
                " Digested: " + DatatypeConverter.printHexBinary(digestBytes);

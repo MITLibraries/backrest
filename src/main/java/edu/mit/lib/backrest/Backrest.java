@@ -79,11 +79,24 @@ public class Backrest {
     static final Logger logger = LoggerFactory.getLogger(Backrest.class);
     static final DateTimeFormatter clFmt = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z");
     static String assetLocator;
+    static int version;
 
     public static void main(String[] args) throws Exception {
 
         Properties props = findConfig(args);
         DBI dbi = new DBI(props.getProperty("dburl"), props);
+        // worry about supported versions if not in test-mode
+        if (! props.getProperty("dburl").contains("h2")) {
+            try (Handle hdl = dbi.open()) {
+                version = DSpaceObject.versionProbe(hdl);
+            } catch (Exception e) {}
+            if (version < 14) {
+                System.out.println("Unsupported DSpace version");
+                System.exit(1);
+            }
+        } else {
+            version = 30;  // test DB version
+        }
         assetLocator = props.getProperty("assets");
         // Advanced instrumentation/metrics if requested
         if (System.getenv("BACKREST_DB_METRICS") != null) {

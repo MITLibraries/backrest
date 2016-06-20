@@ -101,6 +101,7 @@ public class Collection extends DSpaceObject {
     }
 
     static int itemCount(Handle hdl, int collId) {
+        if (Backrest.version < 15 || Backrest.version == 40) return 0; // counts added in 1.5
         return hdl.createQuery("select count from collection_item_count where collection_id = ?")
                   .bind(0, collId)
                   .map(IntegerColumnMapper.PRIMITIVE).first();
