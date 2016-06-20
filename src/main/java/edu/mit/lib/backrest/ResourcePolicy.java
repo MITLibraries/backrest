@@ -99,6 +99,11 @@ public class ResourcePolicy {
 
         @Override
         public ResourcePolicy map(int index, ResultSet rs, StatementContext ctx) throws SQLException {
+            if (Backrest.version < 30) { // fields added in version 3.0
+                return new ResourcePolicy(rs.getInt("policy_id"), rs.getInt("resource_type_id"), rs.getInt("resource_id"),
+                                          rs.getInt("action_id"), rs.getInt("eperson_id"), rs.getInt("epersongroup_id"),
+                                          "Unknown Name", "Unknown Type", "");
+            }
             return new ResourcePolicy(rs.getInt("policy_id"), rs.getInt("resource_type_id"), rs.getInt("resource_id"),
                                       rs.getInt("action_id"), rs.getInt("eperson_id"), rs.getInt("epersongroup_id"),
                                       rs.getString("rpname"), rs.getString("rptype"), rs.getString("rpdescription"));

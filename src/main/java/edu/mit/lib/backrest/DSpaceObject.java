@@ -16,6 +16,7 @@ import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.Query;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
+import org.skife.jdbi.v2.util.LongColumnMapper;
 import org.skife.jdbi.v2.util.StringMapper;
 
 /**
@@ -67,6 +68,23 @@ public class DSpaceObject {
         return hdl.createQuery("select handle,resource_id,resource_type_id from handle where handle = ?")
                   .bind(0, cnriHandle)
                   .map(new DSOMapper()).first();
+    }
+
+    static int versionProbe(Handle hdl) {
+        // deduce the approx DSpace version from the DB schema. Returns an integer
+        // where 14 = 1.4, 30 = 3.0 etc. Don't bother below 1.4 or above 4.0
+        int version = -1; // means unsupported
+        if (probe(hdl, "metadatavalue")) version = 14;
+        if (probe(hdl, "collection_item_count")) version = 15;
+        if (probe(hdl, "harvested_item")) version = 18; // actually, 1.6-1.8
+        if (probe(hdl, "versionitem")) version = 30;
+        if (probe(hdl, "requestitem")) version = 40;
+        return version;
+    }
+
+    private static boolean probe(Handle hdl, String table) {
+        String query = "select count(*) from information_schema.tables where table_name = ?";
+        return hdl.createQuery(query).bind(0, table).map(LongColumnMapper.PRIMITIVE).first() > 0L;
     }
 
     static class DSOMapper implements ResultSetMapper<DSpaceObject> {

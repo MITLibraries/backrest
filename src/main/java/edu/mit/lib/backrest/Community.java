@@ -143,6 +143,7 @@ public class Community extends DSpaceObject {
     }
 
     static int itemCount(Handle hdl, int commId) {
+        if (Backrest.version < 15 || Backrest.version == 40) return 0; // counts added in 1.5
         return hdl.createQuery("select count from community_item_count where community_id = ?")
                   .bind(0, commId)
                   .map(IntegerColumnMapper.PRIMITIVE).first();
