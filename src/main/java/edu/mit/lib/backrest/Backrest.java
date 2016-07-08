@@ -89,9 +89,11 @@ public class Backrest {
         if (! props.getProperty("dburl").contains("h2")) {
             try (Handle hdl = dbi.open()) {
                 version = DSpaceObject.versionProbe(hdl);
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                logger.error("Exception probing version: {}", e.getMessage());
+            }
             if (version < 14) {
-                System.out.println("Unsupported DSpace version");
+                logger.error("Unsupported DSpace version: {}", version);
                 System.exit(1);
             }
         } else {

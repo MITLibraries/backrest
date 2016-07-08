@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -36,6 +37,8 @@ public class Item extends DSpaceObject {
     public static final int TYPE = 2;
     public static final String SELECT = "select * from item ";
 
+    public String archived;
+    public String withdrawn;
     public Collection parentCollection;
     public List<Collection> parentCollectionList;
     public List<Community> parentCommunityList;
@@ -45,10 +48,12 @@ public class Item extends DSpaceObject {
     //JAXB needs
     Item() {}
 
-    Item(int itemId, String name, String handle, Collection parentCollection,
+    Item(int itemId, String name, String handle, String archived, String withdrawn, Collection parentCollection,
          List<Collection> parentCollectionList, List<Community> parentCommunityList,
          List<MetadataValue> metadata, List<Bitstream> bitstreams, List<String> canExpand) {
         super(itemId, name, handle, "item", "/items/" + itemId, canExpand);
+        this.archived = archived;
+        this.withdrawn = withdrawn;
         this.parentCollection = parentCollection;
         this.parentCollectionList = parentCollectionList;
         this.parentCommunityList = parentCommunityList;
@@ -57,7 +62,7 @@ public class Item extends DSpaceObject {
     }
 
     static List<Item> findAll(Handle hdl, QueryParamsMap params) {
-        String queryString = SELECT + "where in_archive='1' order by name limit ? offset ?";
+        String queryString = SELECT + "where in_archive='1' order by item_id limit ? offset ?";
         int limit = Backrest.limitFromParam(params);
         int offset = Backrest.offsetFromParam(params);
         return hdl.createQuery(queryString)
@@ -121,7 +126,13 @@ public class Item extends DSpaceObject {
                       default: break;
                   }
             }
-            return new Item(itemId, rs.getString("name"), DSpaceObject.handleFor(hdl, TYPE, itemId),
+            String name = (metadata != null) ? metadata.stream()
+                                              .filter(mdv -> mdv.key.equals("dc.title"))
+                                              .collect(Collectors.toList()).get(0).value
+                                             : "name";
+            return new Item(itemId, name, DSpaceObject.handleFor(hdl, TYPE, itemId),
+                            Boolean.toString(rs.getBoolean("in_archive")),
+                            Boolean.toString(rs.getBoolean("withdrawn")),
                             owner, parents, communities, metadata, bitstreams, canExpand);
         }
     }

@@ -70,14 +70,15 @@ public class BackrestTest {
            hdl.execute("insert into metadatafieldregistry (metadata_field_id, metadata_schema_id, element) values(4, 1, 'creator')");
            hdl.execute("create table handle (handle_id int primary key, handle varchar, resource_type_id int, resource_id int)");
            hdl.execute("create table collection2item (id int primary key, collection_id int, item_id int)");
-           hdl.execute("create table item (item_id int primary key, name varchar, owning_collection int, in_archive int)");
+           hdl.execute("create table item (item_id int primary key, in_archive int, withdrawn int, owning_collection int)");
            hdl.execute("create table item2bundle (id int primary key, item_id int, bundle_id int)");
-           hdl.execute("insert into item (item_id, name, owning_collection, in_archive) values(1, 'First Item', 1, 1)");
+           hdl.execute("insert into item (item_id, in_archive, withdrawn, owning_collection) values(1, 1, 0, 1)");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(1, '123456789/15', 2, 1)");
-           hdl.execute("insert into item (item_id, name, owning_collection, in_archive) values(2, 'Second Item', 1, 1)");
+           hdl.execute("insert into item (item_id, in_archive, withdrawn, owning_collection) values(2, 1, 0, 1)");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(2, '123456789/16', 2, 2)");
            hdl.execute("create table metadatavalue (metadata_value_id int primary key, item_id int, metadata_field_id int, text_value varchar, text_lang varchar)");
            hdl.execute("insert into metadatavalue (metadata_value_id, item_id, metadata_field_id, text_value, text_lang) values(1, 1, 1, 'http://hdl.handle.net/123456789/3', 'en_US')");
+           hdl.execute("insert into metadatavalue (metadata_value_id, item_id, metadata_field_id, text_value, text_lang) values(3, 1, 2, 'A Ho-Hum Study', 'en_US')");
            hdl.execute("insert into metadatavalue (metadata_value_id, item_id, metadata_field_id, text_value, text_lang) values(2, 2, 2, 'A Very Important Study', 'en_US')");
            hdl.execute("create table community2community (id int primary key, parent_comm_id int, child_comm_id int)");
            hdl.execute("create table community_item_count (community_id int primary key, count int)");
