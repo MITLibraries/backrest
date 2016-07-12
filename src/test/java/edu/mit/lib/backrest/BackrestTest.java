@@ -82,7 +82,7 @@ public class BackrestTest {
            hdl.execute("insert into metadatavalue (metadata_value_id, item_id, metadata_field_id, text_value, text_lang) values(2, 2, 2, 'A Very Important Study', 'en_US')");
            hdl.execute("create table community2community (id int primary key, parent_comm_id int, child_comm_id int)");
            hdl.execute("create table community_item_count (community_id int primary key, count int)");
-           hdl.execute("create table community (community_id int primary key, name varchar, short_description varchar, introductory_text varchar, logo_bitstream_id int)");
+           hdl.execute("create table community (community_id int primary key, name varchar, short_description varchar, introductory_text varchar, logo_bitstream_id int, copyright_text varchar, side_bar_text varchar)");
            hdl.execute("insert into community (community_id, name, short_description, introductory_text, logo_bitstream_id) values(1, 'First Community', 'A Test-driven community', 'What can I say?', 2)");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(3, '123456789/10', 4, 1)");
            hdl.execute("insert into community (community_id, name, short_description, introductory_text) values(2, 'Second Community', 'Also a Test-driven community', 'What did I say?')");
@@ -95,7 +95,7 @@ public class BackrestTest {
            hdl.execute("insert into community_item_count (community_id, count) values (3, 3)");
            hdl.execute("create table community2collection (id int primary key, community_id int, collection_id int)");
            hdl.execute("create table collection_item_count (collection_id int primary key, count int)");
-           hdl.execute("create table collection (collection_id int primary key, name varchar, short_description varchar, introductory_text varchar, logo_bitstream_id int, license varchar)");
+           hdl.execute("create table collection (collection_id int primary key, name varchar, short_description varchar, introductory_text varchar, logo_bitstream_id int, license varchar, copyright_text varchar, side_bar_text varchar)");
            hdl.execute("insert into collection (collection_id, name, short_description, introductory_text, license) values(1, 'First Collection', 'A Test-driven collection', 'What did I say?', 'Everyone can read')");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(6, '123456789/13', 3, 1)");
            hdl.execute("insert into community2collection(id, community_id, collection_id) values(1, 1, 1)");
