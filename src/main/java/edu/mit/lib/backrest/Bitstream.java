@@ -76,8 +76,8 @@ public class Bitstream extends DSpaceObject {
               DSpaceObject parent, List<ResourcePolicy> policies, List<String> canExpand) {
         super(bsId, name, null, "bitstream", "/bitstreams/" + bsId, canExpand);
         this.retrieveLink = "/bitstreams/" + bsId + "/retrieve";
-        this.format = format.shortName;
-        this.mimeType = format.mimeType;
+        this.format = (format != null) ? format.shortName : "unknown";
+        this.mimeType = (format != null) ? format.mimeType : "application/octet-stream";
         this.sizeBytes = sizeBytes;
         this.checkSum = checkSum;
         this.description = description;
@@ -141,6 +141,9 @@ public class Bitstream extends DSpaceObject {
                             .bind(0, fmtId)
                             .map(new FormatMapper())
                             .first();
+            if (fmt == null) {
+                fmt = new Format("unknown", "Unknown", "application/octet-stream");
+            }
             formats.put(fmtId, fmt);
         }
         return formats.get(fmtId);
@@ -204,11 +207,11 @@ public class Bitstream extends DSpaceObject {
             List<ResourcePolicy> policies = null;
             DSpaceObject parent = null;
             for (String expand : toExpand) {
-                  switch (expand) {
-                      case "parent": parent = DSpaceObject.findByBitstream(hdl, id); break;
-                      case "policies": policies = ResourcePolicy.findByResource(hdl, TYPE, id); break;
-                      default: break;
-                  }
+                switch (expand) {
+                    case "parent": parent = DSpaceObject.findByBitstream(hdl, id); break;
+                    case "policies": policies = ResourcePolicy.findByResource(hdl, TYPE, id); break;
+                    default: break;
+                }
             }
             CheckSum checkSum = new CheckSum(rs.getString("checksum_algorithm"), rs.getString("checksum"));
             return new Bitstream(id, rs.getString("name"), rs.getLong("size_bytes"), checkSum,
