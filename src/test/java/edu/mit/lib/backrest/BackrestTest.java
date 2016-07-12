@@ -83,7 +83,7 @@ public class BackrestTest {
            hdl.execute("create table community2community (id int primary key, parent_comm_id int, child_comm_id int)");
            hdl.execute("create table community_item_count (community_id int primary key, count int)");
            hdl.execute("create table community (community_id int primary key, name varchar, short_description varchar, introductory_text varchar, logo_bitstream_id int)");
-           hdl.execute("insert into community (community_id, name, short_description, introductory_text) values(1, 'First Community', 'A Test-driven community', 'What can I say?')");
+           hdl.execute("insert into community (community_id, name, short_description, introductory_text, logo_bitstream_id) values(1, 'First Community', 'A Test-driven community', 'What can I say?', 2)");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(3, '123456789/10', 4, 1)");
            hdl.execute("insert into community (community_id, name, short_description, introductory_text) values(2, 'Second Community', 'Also a Test-driven community', 'What did I say?')");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(4, '123456789/11', 4, 2)");
@@ -108,6 +108,7 @@ public class BackrestTest {
            hdl.execute("create table bundle2bitstream (id int primary key, bundle_id int, bitstream_id int)");
            hdl.execute("create table bitstream (bitstream_id int primary key, bitstream_format_id int, name varchar, size_bytes int, checksum varchar, checksum_algorithm varchar, description varchar, internal_id varchar, sequence_id int)");
            hdl.execute("insert into bitstream (bitstream_id, bitstream_format_id, name, size_bytes, checksum, checksum_algorithm, description, internal_id, sequence_id) values(1, 1, 'First Bitstream', 345345, '2343424', 'md5', 'A bitstream description', '234234', 1)");
+           hdl.execute("insert into bitstream (bitstream_id, bitstream_format_id, name, size_bytes, checksum, checksum_algorithm, description, internal_id, sequence_id) values(2, 1, 'Community Logo Bitstream', 3453456, '23434245', 'md5', 'A logo description', '45654634', 1)");
            hdl.execute("insert into bundle (bundle_id, name) values(1, 'ORIGINAL')");
            hdl.execute("insert into item2bundle (id, item_id, bundle_id) values(1, 1, 1)");
            hdl.execute("insert into bundle2bitstream (id, bundle_id, bitstream_id) values(1, 1, 1)");
