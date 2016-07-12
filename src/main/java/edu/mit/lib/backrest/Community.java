@@ -32,9 +32,9 @@ public class Community extends DSpaceObject {
     public static final String SELECT = "select * from community ";
     public static final String ONLY_TOP = "where not community_id in (select child_comm_id from community2community) ";
 
-    public String copyrightText;
-    public String introductoryText;
     public String shortDescription;
+    public String introductoryText;
+    public String copyrightText;
     public String sidebarText;
     public int countItems;
     public Community parentCommunity;
@@ -45,12 +45,15 @@ public class Community extends DSpaceObject {
     // JAXB needs
     Community() {}
 
-    Community(int commId, String name, String handle, String shortDescription, String introductoryText,
+    Community(int commId, String name, String handle, String shortDescription,
+              String introductoryText, String copyrightText, String sidebarText,
               int countItems, Community parentCommunity, List<Collection> collections,
               List<Community> subCommunities, Bitstream logo, List<String> canExpand) {
         super(commId, name, handle, "community", "/communities/" + commId, canExpand);
         this.shortDescription = shortDescription;
         this.introductoryText = introductoryText;
+        this.copyrightText = copyrightText;
+        this.sidebarText = sidebarText;
         this.countItems = countItems;
         this.parentCommunity = parentCommunity;
         this.collections = collections;
@@ -144,9 +147,10 @@ public class Community extends DSpaceObject {
 
     static int itemCount(Handle hdl, int commId) {
         if (Backrest.version < 15 || Backrest.version == 40) return 0; // counts added in 1.5
-        return hdl.createQuery("select count from community_item_count where community_id = ?")
+        Integer cnt = hdl.createQuery("select count from community_item_count where community_id = ?")
                   .bind(0, commId)
-                  .map(IntegerColumnMapper.PRIMITIVE).first();
+                  .map(IntegerColumnMapper.WRAPPER).first();
+        return (cnt != null) ? cnt.intValue() : 0;
     }
 
     static class CommunityMapper implements ResultSetMapper<Community> {
@@ -168,16 +172,17 @@ public class Community extends DSpaceObject {
             List<Collection> colls = null;
             Bitstream logo = null;
             for (String expand : toExpand) {
-                  switch (expand) {
-                      case "parentCommunity": parentComm = findByChild(hdl, id); break;
-                      case "collections": colls = Collection.findByComm(hdl, id); break;
-                      case "subCommunities": subComms = findSubs(hdl, id); break;
-                      case "logo": logo = Bitstream.findById(hdl, rs.getInt("logo_bitstream_id"), null); break;
-                      default: break;
-                  }
+                switch (expand) {
+                    case "parentCommunity": parentComm = findByChild(hdl, id); break;
+                    case "collections": colls = Collection.findByComm(hdl, id); break;
+                    case "subCommunities": subComms = findSubs(hdl, id); break;
+                    case "logo": logo = Bitstream.findById(hdl, rs.getInt("logo_bitstream_id"), null); break;
+                    default: break;
+                }
             }
             return new Community(id, rs.getString("name"), DSpaceObject.handleFor(hdl, TYPE, id),
                                  rs.getString("short_description"), rs.getString("introductory_text"),
+                                 rs.getString("copyright_text"), rs.getString("side_bar_text"),
                                  itemCount(hdl, id), parentComm, colls, subComms, logo, canExpand);
         }
     }

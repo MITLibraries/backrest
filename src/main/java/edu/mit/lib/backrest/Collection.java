@@ -33,9 +33,9 @@ public class Collection extends DSpaceObject {
     public static final int TYPE = 3;
     public static final String SELECT = "select * from collection ";
 
-    public String copyrightText;
-    public String introductoryText;
     public String shortDescription;
+    public String introductoryText;
+    public String copyrightText;
     public String sidebarText;
     public int numberItems;
     public Community parentCommunity;
@@ -47,12 +47,15 @@ public class Collection extends DSpaceObject {
     // JAXB needs
     Collection() {}
 
-    Collection(int collId, String name, String handle, String shortDescription, String introductoryText,
+    Collection(int collId, String name, String handle, String shortDescription,
+               String introductoryText, String copyrightText, String sidebarText,
                int itemCount, Community parentCommunity, List<Community> parentCommunityList,
                List<Item> items, String license, Bitstream logo, List<String> canExpand) {
         super(collId, name, handle, "collection", "/collections/" + collId, canExpand);
         this.shortDescription = shortDescription;
         this.introductoryText = introductoryText;
+        this.copyrightText = copyrightText;
+        this.sidebarText = sidebarText;
         this.numberItems = itemCount;
         this.parentCommunity = parentCommunity;
         this.parentCommunityList = parentCommunityList;
@@ -102,9 +105,10 @@ public class Collection extends DSpaceObject {
 
     static int itemCount(Handle hdl, int collId) {
         if (Backrest.version < 15 || Backrest.version == 40) return 0; // counts added in 1.5
-        return hdl.createQuery("select count from collection_item_count where collection_id = ?")
+        Integer cnt = hdl.createQuery("select count from collection_item_count where collection_id = ?")
                   .bind(0, collId)
-                  .map(IntegerColumnMapper.PRIMITIVE).first();
+                  .map(IntegerColumnMapper.WRAPPER).first();
+        return (cnt != null) ? cnt.intValue() : 0;
     }
 
     static class CollectionMapper implements ResultSetMapper<Collection> {
@@ -127,17 +131,18 @@ public class Collection extends DSpaceObject {
             String license = null;
             Bitstream logo = null;
             for (String expand : toExpand) {
-                  switch (expand) {
-                      case "parentCommunityList": parents = Community.findAllByColl(hdl, collId); break;
-                      case "parentCommunity": parent = Community.findByColl(hdl, collId).get(0); break;
-                      case "items": items = Item.findByColl(hdl, collId); break;
-                      case "license": license = rs.getString("license"); break;
-                      case "logo": logo = Bitstream.findById(hdl, rs.getInt("logo_bitstream_id"), null); break;
-                      default: break;
-                  }
+                switch (expand) {
+                    case "parentCommunityList": parents = Community.findAllByColl(hdl, collId); break;
+                    case "parentCommunity": parent = Community.findByColl(hdl, collId).get(0); break;
+                    case "items": items = Item.findByColl(hdl, collId); break;
+                    case "license": license = rs.getString("license"); break;
+                    case "logo": logo = Bitstream.findById(hdl, rs.getInt("logo_bitstream_id"), null); break;
+                    default: break;
+                }
             }
             return new Collection(collId, rs.getString("name"), DSpaceObject.handleFor(hdl, TYPE, collId),
                                   rs.getString("short_description"), rs.getString("introductory_text"),
+                                  rs.getString("copyright_text"), rs.getString("side_bar_text"),
                                   itemCount(hdl, collId), parent, parents, items, license, logo, canExpand);
         }
     }
