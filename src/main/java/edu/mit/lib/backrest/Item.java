@@ -38,6 +38,7 @@ public class Item extends DSpaceObject {
 
     public String archived;
     public String withdrawn;
+    public String lastModified;
     public Collection parentCollection;
     public List<Collection> parentCollectionList;
     public List<Community> parentCommunityList;
@@ -47,12 +48,13 @@ public class Item extends DSpaceObject {
     //JAXB needs
     Item() {}
 
-    Item(int itemId, String name, String handle, String archived, String withdrawn, Collection parentCollection,
-         List<Collection> parentCollectionList, List<Community> parentCommunityList,
+    Item(int itemId, String name, String handle, String archived, String withdrawn, String lastModified,
+         Collection parentCollection, List<Collection> parentCollectionList, List<Community> parentCommunityList,
          List<MetadataValue> metadata, List<Bitstream> bitstreams, List<String> canExpand) {
         super(itemId, name, handle, "item", "/items/" + itemId, canExpand);
         this.archived = archived;
         this.withdrawn = withdrawn;
+        this.lastModified = lastModified;
         this.parentCollection = parentCollection;
         this.parentCollectionList = parentCollectionList;
         this.parentCommunityList = parentCommunityList;
@@ -132,6 +134,7 @@ public class Item extends DSpaceObject {
             return new Item(itemId, name, DSpaceObject.handleFor(hdl, TYPE, itemId),
                             Boolean.toString(rs.getBoolean("in_archive")),
                             Boolean.toString(rs.getBoolean("withdrawn")),
+                            rs.getTimestamp("last_modified").toString(),
                             owner, parents, communities, metadata, bitstreams, canExpand);
         }
     }

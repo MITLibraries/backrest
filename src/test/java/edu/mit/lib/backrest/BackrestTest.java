@@ -70,11 +70,11 @@ public class BackrestTest {
            hdl.execute("insert into metadatafieldregistry (metadata_field_id, metadata_schema_id, element) values(4, 1, 'creator')");
            hdl.execute("create table handle (handle_id int primary key, handle varchar, resource_type_id int, resource_id int)");
            hdl.execute("create table collection2item (id int primary key, collection_id int, item_id int)");
-           hdl.execute("create table item (item_id int primary key, in_archive int, withdrawn int, owning_collection int)");
+           hdl.execute("create table item (item_id int primary key, in_archive int, withdrawn int, last_modified timestamp, owning_collection int)");
            hdl.execute("create table item2bundle (id int primary key, item_id int, bundle_id int)");
-           hdl.execute("insert into item (item_id, in_archive, withdrawn, owning_collection) values(1, 1, 0, 1)");
+           hdl.execute("insert into item (item_id, in_archive, withdrawn, last_modified, owning_collection) values(1, 1, 0, CURRENT_TIMESTAMP(), 1)");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(1, '123456789/15', 2, 1)");
-           hdl.execute("insert into item (item_id, in_archive, withdrawn, owning_collection) values(2, 1, 0, 1)");
+           hdl.execute("insert into item (item_id, in_archive, withdrawn, last_modified, owning_collection) values(2, 1, 0, CURRENT_TIMESTAMP(), 1)");
            hdl.execute("insert into handle (handle_id, handle, resource_type_id, resource_id) values(2, '123456789/16', 2, 2)");
            hdl.execute("create table metadatavalue (metadata_value_id int primary key, item_id int, metadata_field_id int, text_value varchar, text_lang varchar)");
            hdl.execute("insert into metadatavalue (metadata_value_id, item_id, metadata_field_id, text_value, text_lang) values(1, 1, 1, 'http://hdl.handle.net/123456789/3', 'en_US')");
