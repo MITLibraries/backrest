@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/MITLibraries/backrest.svg?branch=master)]
 (https://travis-ci.org/MITLibraries/backrest)
+[![Dependency Status](https://dependencyci.com/github/MITLibraries/backrest/badge)]
+(https://dependencyci.com/github/MITLibraries/backrest)
 
 backrest is an API server for the read-only side of the 5.X DSpace REST API.
 
