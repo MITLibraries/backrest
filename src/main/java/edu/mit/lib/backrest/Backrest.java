@@ -122,6 +122,7 @@ public class Backrest {
 
         before((req, res) -> {
             // Instrument all the things!
+            res.header("Access-Control-Allow-Origin","*");
             svcReqs.mark();
             req.attribute("timerCtx", respTime.time());
             getIfCachable(req);
@@ -208,6 +209,12 @@ public class Backrest {
                 return internalError(e, res);
             }
         });
+        
+        options("/logout", (req, res) -> {
+            res.header("Access-Control-Allow-Headers","rest-dspace-token");
+            res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+            return "Preflight ok";
+        });
 
         post("/logout", (req, res) -> {
             String token = req.headers("rest-dspace-token");
@@ -220,6 +227,12 @@ public class Backrest {
             }
         });
 
+        options("/status", (req, res) -> {
+            res.header("Access-Control-Allow-Headers","rest-dspace-token");
+            res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+            return "Preflight ok";
+        });
+        
         get("/status", (req, res) -> {
             String token = req.headers("rest-dspace-token");
             Object status = new Status();
