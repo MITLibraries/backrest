@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -160,19 +161,20 @@ public class Bitstream extends DSpaceObject {
             return Files.newInputStream(assetFile);
         } else if (scheme.startsWith("http")) {
             // request asset from DSpace server
-            URI assetURI = locatorUri.resolve(assetUrlPath(hdl));
+            URI assetURI = new URI(assetUriString(hdl));
             return assetURI.toURL().openConnection().getInputStream();
         } else {
+            Backrest.logger.error("Attempting to retrieve asset - no scheme match");
             return null;
         }
     }
 
-    private String assetUrlPath(Handle hdl) {
+    private String assetUriString(Handle hdl) {
         // need to determine owning Item's handle - which is part of the URI path
-        StringBuilder sb = new StringBuilder();
-        if (! Backrest.assetLocator.toString().endsWith("/")) sb.append("/");
-        sb.append(DSpaceObject.handleFor(hdl, Item.TYPE, findOwner(hdl, id)));
-        sb.append("/").append(name).append("?sequence=").append(sequenceId);
+        StringBuilder sb = new StringBuilder(Backrest.assetLocator);
+        if (! Backrest.assetLocator.endsWith("/")) sb.append("/");
+        String handle = DSpaceObject.handleFor(hdl, Item.TYPE, findOwner(hdl, id));
+        sb.append(handle).append("/").append(URLEncoder.encode(name)).append("?sequence=").append(sequenceId);
         return sb.toString();
     }
 
