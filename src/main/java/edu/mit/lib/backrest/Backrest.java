@@ -6,7 +6,9 @@ package edu.mit.lib.backrest;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.sql.SQLException;
@@ -41,6 +43,7 @@ import org.skife.jdbi.v2.Handle;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.io.ByteStreams;
 import static com.google.common.base.Strings.*;
 
 import org.slf4j.Logger;
@@ -209,7 +212,7 @@ public class Backrest {
                 return internalError(e, res);
             }
         });
-        
+
         options("/logout", (req, res) -> {
             res.header("Access-Control-Allow-Headers","rest-dspace-token");
             res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -232,7 +235,7 @@ public class Backrest {
             res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
             return "Preflight ok";
         });
-        
+
         get("/status", (req, res) -> {
             String token = req.headers("rest-dspace-token");
             Object status = new Status();
@@ -496,8 +499,15 @@ public class Backrest {
                       res.status(403);
                       return "Inaccessible bitstream: " + req.params(":bitstreamId");
                     } else {
+                        res.status(200);
                         res.type(bitstream.mimeType);
-                        return bitstream.retrieve(hdl);
+                        res.header("Content-Length", Long.toString(bitstream.sizeBytes));
+                        OutputStream resOut = res.raw().getOutputStream();
+                        InputStream resIn = bitstream.retrieve(hdl);
+                        ByteStreams.copy(resIn, resOut);
+                        resIn.close();
+                        resOut.close();
+                        return "";
                     }
                 }
             } catch (Exception e) {
