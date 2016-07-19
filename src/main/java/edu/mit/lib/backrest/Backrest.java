@@ -130,6 +130,21 @@ public class Backrest {
             req.attribute("timerCtx", respTime.time());
             getIfCachable(req);
         });
+        
+        options("/*", (req, res) -> {
+            String accessControlRequestHeaders = req.headers("Access-Control-Request-Headers");
+            if (accessControlRequestHeaders != null) {
+                res.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+            }
+            String accessControlRequestMethod = req.headers("Access-Control-Request-Method");
+            if (accessControlRequestMethod != null) {
+                res.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+            }
+            res.header("Access-Control-Allow-Credentials", "true");
+            res.header("Access-Control-Expose-Headers", "*");
+            res.status(200);
+            return "OK";
+        });
 
         get("/ping", (req, res) -> {
             res.type("text/plain");
