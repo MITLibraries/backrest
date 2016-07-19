@@ -94,7 +94,7 @@ public class Backrest {
             }
             if (version < 14) {
                 logger.error("Unsupported DSpace version: {}", version);
-                System.exit(1);
+//                System.exit(1);
             }
         } else {
             version = 30;  // test DB version
@@ -123,9 +123,24 @@ public class Backrest {
         before((req, res) -> {
             // Instrument all the things!
             res.header("Access-Control-Allow-Origin","*");
+            res.header("Access-Control-Expose-Headers", "*");
             svcReqs.mark();
             req.attribute("timerCtx", respTime.time());
             getIfCachable(req);
+        });
+        
+        options("/*", (req, res) -> {
+            String accessControlRequestHeaders = req.headers("Access-Control-Request-Headers");
+            if (accessControlRequestHeaders != null) {
+                res.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+            }
+            String accessControlRequestMethod = req.headers("Access-Control-Request-Method");
+            if (accessControlRequestMethod != null) {
+                res.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+            }
+            res.header("Access-Control-Allow-Credentials", "true");
+            res.status(200);
+            return "OK";
         });
 
         get("/ping", (req, res) -> {
@@ -209,12 +224,6 @@ public class Backrest {
                 return internalError(e, res);
             }
         });
-        
-        options("/logout", (req, res) -> {
-            res.header("Access-Control-Allow-Headers","rest-dspace-token");
-            res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
-            return "Preflight ok";
-        });
 
         post("/logout", (req, res) -> {
             String token = req.headers("rest-dspace-token");
@@ -225,12 +234,6 @@ public class Backrest {
                 res.status(400);
                 return "Missing or unknown token";
             }
-        });
-
-        options("/status", (req, res) -> {
-            res.header("Access-Control-Allow-Headers","rest-dspace-token");
-            res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
-            return "Preflight ok";
         });
         
         get("/status", (req, res) -> {
@@ -267,7 +270,7 @@ public class Backrest {
                 return internalError(e, res);
             }
         });
-
+        
         get("/communities", (req, res) -> {
             if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
