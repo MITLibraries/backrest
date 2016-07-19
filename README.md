@@ -65,9 +65,9 @@ then you may set an environment variable to a file URI of the asset store path
     BACKREST_ASSETS=file:///dspace/assetstore
 
 If the asset directory is *not* reachable, then you may instead chose to _delegate_ access to the DSpace UI itself.
-Here, the environment variable is set to the base URL for bitstream access:
+Here, the environment variable is set to the base URL for DSpace instance:
 
-    BACKREST_ASSETS=https://dspace.univ.edu/bitstream/handle
+    BACKREST_ASSETS=https://dspace.univ.edu
 
 In this configuration, backrest will simply fetch the bitstreams from the regular DSpace URLs, and forward to the caller.
 This method is really only designed to work for un-restricted content.
