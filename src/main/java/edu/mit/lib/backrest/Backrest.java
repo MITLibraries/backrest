@@ -126,7 +126,6 @@ public class Backrest {
         before((req, res) -> {
             // Instrument all the things!
             res.header("Access-Control-Allow-Origin","*");
-            res.header("Access-Control-Expose-Headers", "*");
             svcReqs.mark();
             req.attribute("timerCtx", respTime.time());
             getIfCachable(req);
@@ -142,6 +141,7 @@ public class Backrest {
                 res.header("Access-Control-Allow-Methods", accessControlRequestMethod);
             }
             res.header("Access-Control-Allow-Credentials", "true");
+            res.header("Access-Control-Expose-Headers", "*");
             res.status(200);
             return "OK";
         });
