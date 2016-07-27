@@ -68,17 +68,17 @@ public class Item extends DSpaceObject {
         int offset = Backrest.offsetFromParam(params);
         return hdl.createQuery(queryString)
                   .bind(0, limit).bind(1, offset)
-                  .map(new ItemMapper(hdl, null)).list();
+                  .map(new ItemMapper(hdl, params)).list();
     }
 
-    static List<Item> findByColl(Handle hdl, int collId) {
+    static List<Item> findByColl(Handle hdl, int collId, QueryParamsMap params) {
         String queryString = "select item.* from item, collection2item " +
                              "where item.item_id=collection2item.item_id " +
                              "and collection2item.collection_id= ? " +
                              "and item.in_archive='1'";
         return hdl.createQuery(queryString)
                   .bind(0, collId)
-                  .map(new ItemMapper(hdl, null)).list();
+                  .map(new ItemMapper(hdl, params)).list();
     }
 
     static Item findById(Handle hdl, int itemId, QueryParamsMap params) {

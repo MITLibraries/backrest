@@ -391,7 +391,7 @@ public class Backrest {
                     res.status(404);
                     return "No such collection: " + req.params(":collectionId");
                 } else {
-                    List<Item> items = Item.findByColl(hdl, coll.id);
+                    List<Item> items = Item.findByColl(hdl, coll.id, req.queryMap());
                     return acceptXml(req) ? dataToXml(res, new Item.XList(items)) :
                                             dataToJson(res, items);
                 }
