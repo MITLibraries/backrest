@@ -170,15 +170,16 @@ public class Bitstream extends DSpaceObject {
     }
 
     private String assetUriString(Handle hdl) {
+        String encName = (name != null) ? URLEncoder.encode(name) : "logo";
         StringBuilder sb = new StringBuilder(Backrest.assetLocator);
         if (! Backrest.assetLocator.endsWith("/")) sb.append("/");
         sb.append("bitstream/");
         // first determine if bitstream is a logo or a regular file
         DSpaceObject dso = DSpaceObject.findByBitstream(hdl, id);
         if ("item".equals(dso.type)) {
-            sb.append("handle/").append(dso.handle).append("/").append(URLEncoder.encode(name)).append("?sequence=").append(sequenceId);
+            sb.append("handle/").append(dso.handle).append("/").append(encName).append("?sequence=").append(sequenceId);
         } else {
-            sb.append("id/").append(id).append("/").append(URLEncoder.encode(name)).append("?sequence=-1");
+            sb.append("id/").append(id).append("/").append(encName).append("?sequence=-1");
         }
         return sb.toString();
     }
