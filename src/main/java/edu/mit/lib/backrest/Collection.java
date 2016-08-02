@@ -115,10 +115,12 @@ public class Collection extends DSpaceObject {
 
         private final List<String> canExpand = new ArrayList<String>(Arrays.asList("parentCommunityList", "parentCommunity", "items", "license", "logo", "all"));
         private final List<String> toExpand;
+        private final QueryParamsMap params;
         private final Handle hdl;
 
         public CollectionMapper(Handle hdl, QueryParamsMap params) {
             this.hdl = hdl;
+            this.params = params;
             this.toExpand = Backrest.toExpandList(params, canExpand);
         }
 
