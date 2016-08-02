@@ -73,13 +73,13 @@ public class Collection extends DSpaceObject {
                   .map(new CollectionMapper(hdl, null)).list();
     }
 
-    static List<Collection> findByComm(Handle hdl, int commId) {
+    static List<Collection> findByComm(Handle hdl, int commId, QueryParamsMap params) {
         String queryString = "select collection.* from collection, community2collection " +
             "where community2collection.collection_id=collection.collection_id " +
             "and community2collection.community_id= ? order by collection.name";
         return hdl.createQuery(queryString)
                   .bind(0, commId)
-                  .map(new CollectionMapper(hdl, null)).list();
+                  .map(new CollectionMapper(hdl, params)).list();
     }
 
     static List<Collection> findByChild(Handle hdl, int itemId) {
@@ -115,10 +115,12 @@ public class Collection extends DSpaceObject {
 
         private final List<String> canExpand = new ArrayList<String>(Arrays.asList("parentCommunityList", "parentCommunity", "items", "license", "logo", "all"));
         private final List<String> toExpand;
+        private final QueryParamsMap params;
         private final Handle hdl;
 
         public CollectionMapper(Handle hdl, QueryParamsMap params) {
             this.hdl = hdl;
+            this.params = params;
             this.toExpand = Backrest.toExpandList(params, canExpand);
         }
 
@@ -134,7 +136,7 @@ public class Collection extends DSpaceObject {
                 switch (expand) {
                     case "parentCommunityList": parents = Community.findAllByColl(hdl, collId); break;
                     case "parentCommunity": parent = Community.findByColl(hdl, collId).get(0); break;
-                    case "items": items = Item.findByColl(hdl, collId); break;
+                    case "items": items = Item.findByColl(hdl, collId, null); break;
                     case "license": license = rs.getString("license"); break;
                     case "logo": logo = Bitstream.findById(hdl, rs.getInt("logo_bitstream_id"), null); break;
                     default: break;

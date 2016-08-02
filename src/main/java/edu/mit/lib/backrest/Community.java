@@ -74,13 +74,13 @@ public class Community extends DSpaceObject {
                   .map(new CommunityMapper(hdl, params)).list();
     }
 
-    static List<Community> findSubs(Handle hdl, int commId) {
+    static List<Community> findSubs(Handle hdl, int commId, QueryParamsMap params) {
         String queryString = "select community.* from community, community2community " +
                 "where community2community.child_comm_id=community.community_id " +
                 "and community2community.parent_comm_id= ? ORDER BY community.name";
         return hdl.createQuery(queryString)
                   .bind(0, commId)
-                  .map(new CommunityMapper(hdl, null)).list();
+                  .map(new CommunityMapper(hdl, params)).list();
     }
 
     static List<Community> findByItem(Handle hdl, int itemId) {
@@ -174,8 +174,8 @@ public class Community extends DSpaceObject {
             for (String expand : toExpand) {
                 switch (expand) {
                     case "parentCommunity": parentComm = findByChild(hdl, id); break;
-                    case "collections": colls = Collection.findByComm(hdl, id); break;
-                    case "subCommunities": subComms = findSubs(hdl, id); break;
+                    case "collections": colls = Collection.findByComm(hdl, id, null); break;
+                    case "subCommunities": subComms = findSubs(hdl, id, null); break;
                     case "logo": logo = Bitstream.findById(hdl, rs.getInt("logo_bitstream_id"), null); break;
                     default: break;
                 }

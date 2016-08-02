@@ -326,12 +326,12 @@ public class Backrest {
         get("/communities/:communityId/collections", (req, res) -> {
             if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
-                Community comm = Community.findById(hdl, Integer.valueOf(req.params(":communityId")), req.queryMap());
+                Community comm = Community.findById(hdl, Integer.valueOf(req.params(":communityId")), null);
                 if (comm == null) {
                     res.status(404);
                     return "No such community: " + req.params(":communityId");
                 } else {
-                    List<Collection> colls = Collection.findByComm(hdl, comm.id);
+                    List<Collection> colls = Collection.findByComm(hdl, comm.id, req.queryMap());
                     return acceptXml(req) ? dataToXml(res, new Collection.XList(colls)) :
                                             dataToJson(res, colls);
                 }
@@ -343,12 +343,12 @@ public class Backrest {
         get("/communities/:communityId/communities", (req, res) -> {
             if (inCache(req)) return fromCache(req, res);
             try (Handle hdl = dbi.open()) {
-                Community comm = Community.findById(hdl, Integer.valueOf(req.params(":communityId")), req.queryMap());
+                Community comm = Community.findById(hdl, Integer.valueOf(req.params(":communityId")), null);
                 if (comm == null) {
                     res.status(404);
                     return "No such community: " + req.params(":communityId");
                 } else {
-                    List<Community> comms = Community.findSubs(hdl, comm.id);
+                    List<Community> comms = Community.findSubs(hdl, comm.id, req.queryMap());
                     return acceptXml(req) ? dataToXml(res, new Community.XList(comms)) :
                                             dataToJson(res, comms);
                 }
@@ -391,7 +391,7 @@ public class Backrest {
                     res.status(404);
                     return "No such collection: " + req.params(":collectionId");
                 } else {
-                    List<Item> items = Item.findByColl(hdl, coll.id);
+                    List<Item> items = Item.findByColl(hdl, coll.id, req.queryMap());
                     return acceptXml(req) ? dataToXml(res, new Item.XList(items)) :
                                             dataToJson(res, items);
                 }
