@@ -94,7 +94,7 @@ public class Bitstream extends DSpaceObject {
         int offset = Backrest.offsetFromParam(params);
         return hdl.createQuery(SELECT + "order by name limit ? offset ?")
                   .bind(0, limit).bind(1, offset)
-                  .map(new BitstreamMapper(hdl, null)).list();
+                  .map(new BitstreamMapper(hdl, params)).list();
     }
 
     static List<Bitstream> findByItem(Handle hdl, int itemId) {

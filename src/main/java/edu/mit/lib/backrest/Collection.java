@@ -73,13 +73,13 @@ public class Collection extends DSpaceObject {
                   .map(new CollectionMapper(hdl, null)).list();
     }
 
-    static List<Collection> findByComm(Handle hdl, int commId) {
+    static List<Collection> findByComm(Handle hdl, int commId, QueryParamsMap params) {
         String queryString = "select collection.* from collection, community2collection " +
             "where community2collection.collection_id=collection.collection_id " +
             "and community2collection.community_id= ? order by collection.name";
         return hdl.createQuery(queryString)
                   .bind(0, commId)
-                  .map(new CollectionMapper(hdl, null)).list();
+                  .map(new CollectionMapper(hdl, params)).list();
     }
 
     static List<Collection> findByChild(Handle hdl, int itemId) {
