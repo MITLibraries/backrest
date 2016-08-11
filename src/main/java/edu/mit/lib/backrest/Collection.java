@@ -115,12 +115,10 @@ public class Collection extends DSpaceObject {
 
         private final List<String> canExpand = new ArrayList<String>(Arrays.asList("parentCommunityList", "parentCommunity", "items", "license", "logo", "all"));
         private final List<String> toExpand;
-        private final QueryParamsMap params;
         private final Handle hdl;
 
         public CollectionMapper(Handle hdl, QueryParamsMap params) {
             this.hdl = hdl;
-            this.params = params;
             this.toExpand = Backrest.toExpandList(params, canExpand);
         }
 
@@ -128,8 +126,8 @@ public class Collection extends DSpaceObject {
         public Collection map(int index, ResultSet rs, StatementContext ctx) throws SQLException {
             int collId = rs.getInt("collection_id");
             Community parent = null;
-            List<Community> parents = null;
-            List<Item> items = null;
+            List<Community> parents = new ArrayList<>();
+            List<Item> items = new ArrayList<>();
             String license = null;
             Bitstream logo = null;
             for (String expand : toExpand) {

@@ -168,8 +168,8 @@ public class Community extends DSpaceObject {
         public Community map(int index, ResultSet rs, StatementContext ctx) throws SQLException {
             int id = rs.getInt("community_id");
             Community parentComm = null;
-            List<Community> subComms = null;
-            List<Collection> colls = null;
+            List<Community> subComms = new ArrayList<>();
+            List<Collection> colls = new ArrayList<>();
             Bitstream logo = null;
             for (String expand : toExpand) {
                 switch (expand) {
