@@ -72,6 +72,19 @@ Here, the environment variable is set to the base URL for DSpace instance:
 In this configuration, backrest will simply fetch the bitstreams from the regular DSpace URLs, and forward to the caller.
 This method is really only designed to work for un-restricted content.
 
+### Docker ###
+
+A docker image for backrest is available on Docker Hub. When running the docker container, you will need to pass in the above environment variables with the -e flag or via a file using --env-file. Note that localhost will not work for the database connection, you must use the host IP address. Similarly, if BACKREST_ASSETS points to a local file store, you must mount a volume from the host when running the container. For example:
+
+```
+docker run -v /host/path/to/assetstore:/assetstore \
+    -e BACKREST_ASSETS=file:///assetstore \
+    -e BACKREST_DB_URL=jdbc:postgresql://<host-ip>/dspace \
+    -e BACKREST_DB_USER=dspace \
+    -e BACKREST_DB_PASSWD=imasecret \
+    -p 4567:4567 mitlibraries/backrest
+```
+
 ## Operation and Management ##
 
 Backrest provides a number of affordances for reliable, performant and scalable operation.
