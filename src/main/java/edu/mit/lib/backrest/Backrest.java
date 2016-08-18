@@ -56,6 +56,7 @@ import com.codahale.metrics.json.MetricsModule;
 import com.codahale.metrics.jdbi.InstrumentedTimingCollector;
 import static com.codahale.metrics.MetricRegistry.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -130,7 +131,7 @@ public class Backrest {
             req.attribute("timerCtx", respTime.time());
             getIfCachable(req);
         });
-        
+
         options("/*", (req, res) -> {
             String accessControlRequestHeaders = req.headers("Access-Control-Request-Headers");
             if (accessControlRequestHeaders != null) {
@@ -204,7 +205,7 @@ public class Backrest {
 
         post("/login", (req, res) -> {
             try (Handle hdl = dbi.open()) {
-                Security.User user = userFromXml(req);
+                Security.User user = userFromRequest(req);
                 String fullName = user.authenticate(hdl);
                 if (fullName != null) {
                     // if already logged in - don't mint a new token
@@ -662,14 +663,25 @@ public class Backrest {
         }
     }
 
-    private static Security.User userFromXml(Request req) {
-        try {
-            JAXBContext context = JAXBContext.newInstance(Security.User.class);
-            Unmarshaller unmarshaller = context.createUnmarshaller();
-            StringBuffer xmlStr = new StringBuffer(req.body());
-            return (Security.User)unmarshaller.unmarshal(new StreamSource(new StringReader(xmlStr.toString())));
-        } catch (Exception e) {
-            throw new RuntimeException("JAXB Exception: " + e.getMessage());
+    private static Security.User userFromRequest(Request req) {
+        String ctype = req.headers("Content-Type");
+        if (null == ctype || ctype.contains("application/xml")) {
+            try {
+                JAXBContext context = JAXBContext.newInstance(Security.User.class);
+                Unmarshaller unmarshaller = context.createUnmarshaller();
+                StringBuffer xmlStr = new StringBuffer(req.body());
+                return (Security.User)unmarshaller.unmarshal(new StreamSource(new StringReader(xmlStr.toString())));
+            } catch (Exception e) {
+                throw new RuntimeException("JAXB Exception: " + e.getMessage());
+            }
+        } else { // assume it's JSON
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode jsonUser = mapper.readTree(req.body());
+                return new Security.User(jsonUser.findValue("email").asText(), jsonUser.findValue("password").asText());
+            } catch (Exception e) {
+                throw new RuntimeException("IOException from ObjectMapper: " + e.getMessage());
+            }
         }
     }
 
