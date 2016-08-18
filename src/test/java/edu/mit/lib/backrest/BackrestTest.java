@@ -150,10 +150,11 @@ public class BackrestTest {
     }
 
     @Test
-    public void loginFail() throws IOException {
+    public void loginFailXml() throws IOException {
         CloseableHttpClient client = HttpClients.createDefault();
         String url = TEST_SVC_URL + "/login";
         HttpPost post = new HttpPost(url);
+        post.addHeader("Content-Type", "application/xml");
         post.setEntity(new StringEntity("<user><email>bmbf@mit.edu</email><password>wrong</password></user>"));
         HttpResponse response = client.execute(post);
         assertEquals(response.getStatusLine().getStatusCode(), 403);
@@ -167,11 +168,68 @@ public class BackrestTest {
     }
 
     @Test
-    public void loginSuccess() throws IOException {
+    public void loginFailJson() throws IOException {
         CloseableHttpClient client = HttpClients.createDefault();
         String url = TEST_SVC_URL + "/login";
         HttpPost post = new HttpPost(url);
+        post.addHeader("Content-Type", "application/json");
+        post.setEntity(new StringEntity("{\"email\":\"bmbf@mit.edu\",\"password\":\"wrong\"}"));
+        HttpResponse response = client.execute(post);
+        assertEquals(response.getStatusLine().getStatusCode(), 403);
+        // verify status is unauthenticated
+        url = TEST_SVC_URL + "/status";
+        response = client.execute(new HttpGet(url));
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        assertTrue(baos.toString().contains("false"));
+    }
+
+    @Test
+    public void loginSuccessXml() throws IOException {
+        CloseableHttpClient client = HttpClients.createDefault();
+        String url = TEST_SVC_URL + "/login";
+        HttpPost post = new HttpPost(url);
+        post.addHeader("Content-Type", "application/xml");
         post.setEntity(new StringEntity("<user><email>bmbf@mit.edu</email><password>secret</password></user>"));
+        HttpResponse response = client.execute(post);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        String token = baos.toString();
+        baos.close();
+        // verify status is authenticated
+        url = TEST_SVC_URL + "/status";
+        HttpGet statGet = new HttpGet(url);
+        statGet.addHeader("rest-dspace-token", token);
+        response = client.execute(statGet);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        assertTrue(baos.toString().contains("true"));
+        baos.close();
+        // logout
+        url = TEST_SVC_URL + "/logout";
+        post = new HttpPost(url);
+        post.addHeader("rest-dspace-token", token);
+        post.setEntity(new StringEntity("foo"));
+        response = client.execute(post);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        // verify status is unauthenticated
+        response = client.execute(statGet);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+        baos = new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        assertTrue(baos.toString().contains("false"));
+    }
+
+    @Test
+    public void loginSuccessJson() throws IOException {
+        CloseableHttpClient client = HttpClients.createDefault();
+        String url = TEST_SVC_URL + "/login";
+        HttpPost post = new HttpPost(url);
+        post.addHeader("Content-Type", "application/json");
+        post.setEntity(new StringEntity("{\"email\":\"bmbf@mit.edu\",\"password\":\"secret\"}"));
         HttpResponse response = client.execute(post);
         assertEquals(response.getStatusLine().getStatusCode(), 200);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
