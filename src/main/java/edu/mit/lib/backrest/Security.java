@@ -48,7 +48,7 @@ public class Security {
             if (eperson != null) {
                 try { // verify password
                     if (Backrest.version < 30) { // no salt added
-                        if (DatatypeConverter.printHexBinary(digestUnsalted(password)).equals(eperson.password)) {
+                        if (DatatypeConverter.printHexBinary(digestUnsalted(password)).equalsIgnoreCase(eperson.password)) {
                             return eperson.fullName;
                         }
                     } else {
