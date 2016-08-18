@@ -216,7 +216,7 @@ public class Backrest {
                         tokenMap.put(token, value);
                     } else {
                         // find it in map - ugh
-                        token = tokenMap.entrySet().stream().filter(e -> e.getValue().equals(user.email))
+                        token = tokenMap.entrySet().stream().filter(e -> e.getValue().equals(value))
                                         .collect(Collectors.toList()).get(0).getKey();
                     }
                     return token;
