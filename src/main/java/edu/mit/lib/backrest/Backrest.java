@@ -627,12 +627,10 @@ public class Backrest {
 
     private static String dataToMedia(Request req, Response res, Object data) {
         String accept = req.headers("Accept");
-        if (null == accept || accept.contains("application/json")) {
-            return dataToJson(res, data);
-        } else if (null != accept && accept.contains("application/xml")) {
+        if (null != accept && accept.contains("application/xml")) {
             return dataToXml(res, data);
         } else {
-            return null;
+            return dataToJson(res, data);
         }
     }
 
