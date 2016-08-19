@@ -134,10 +134,11 @@ public class Community extends DSpaceObject {
 
     static List<Community> findAllByColl(Handle hdl, int collId) {
         List<Community> results = findByColl(hdl, collId);
+        ArrayList<Community> allResults = new ArrayList<>(results);
         for (Community comm : results) {
-            results.addAll(findParents(hdl, new ArrayList<Community>(), comm.id));
+            allResults.addAll(findParents(hdl, new ArrayList<Community>(), comm.id));
         }
-        return results;
+        return allResults;
     }
 
     static Community withLogo(Handle hdl, int bsId) {
