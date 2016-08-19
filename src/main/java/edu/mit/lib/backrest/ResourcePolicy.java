@@ -35,24 +35,20 @@ public class ResourcePolicy {
     public String action;
     public int epersonId;
     public int groupId;
-    public String rpName;
     public String rpType;
-    public String rpDescription;
 
     // JAXB needs
     ResourcePolicy() {}
 
-    ResourcePolicy(int polId, int resourceTypeId, int resourceId, int actionId, int epersonId,
-                   int groupId, String rpName, String rpType, String rpDescription) {
+    ResourcePolicy(int polId, int resourceTypeId, int resourceId, int actionId,
+                   int epersonId, int groupId, String rpType) {
         this.id = polId;
         this.resourceType = typeId2type(resourceTypeId);
         this.resourceId = resourceId;
         this.action = actionId2action(actionId);
         this.epersonId = epersonId;
         this.groupId = groupId;
-        this.rpName = rpName;
         this.rpType = rpType;
-        this.rpDescription = rpDescription;
     }
 
     static List<ResourcePolicy> findByResource(Handle hdl, int resType, int resId) {
@@ -80,12 +76,12 @@ public class ResourcePolicy {
 
     private static String actionId2action(int actionId) {
         switch(actionId) {
-            case 0: return "read";
-            case 1: return "write";
-            case 2: return "delete";
-            case 3: return "add";
-            case 4: return "remove";
-            default: return "unknown";
+            case 0: return "READ";
+            case 1: return "WRITE";
+            case 2: return "DELETE";
+            case 3: return "ADD";
+            case 4: return "REMOVE";
+            default: return "UNKOWN";
         }
     }
 
@@ -99,14 +95,10 @@ public class ResourcePolicy {
 
         @Override
         public ResourcePolicy map(int index, ResultSet rs, StatementContext ctx) throws SQLException {
-            if (Backrest.version < 30) { // fields added in version 3.0
-                return new ResourcePolicy(rs.getInt("policy_id"), rs.getInt("resource_type_id"), rs.getInt("resource_id"),
-                                          rs.getInt("action_id"), rs.getInt("eperson_id"), rs.getInt("epersongroup_id"),
-                                          "Unknown Name", "Unknown Type", "");
-            }
+            String rpType = (Backrest.version < 30) ? "TYPE_SUBMISSION" : rs.getString("rptype");
             return new ResourcePolicy(rs.getInt("policy_id"), rs.getInt("resource_type_id"), rs.getInt("resource_id"),
                                       rs.getInt("action_id"), rs.getInt("eperson_id"), rs.getInt("epersongroup_id"),
-                                      rs.getString("rpname"), rs.getString("rptype"), rs.getString("rpdescription"));
+                                      rpType);
         }
     }
 
