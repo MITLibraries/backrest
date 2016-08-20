@@ -71,13 +71,13 @@ public class Item extends DSpaceObject {
                   .map(new ItemMapper(hdl, params)).list();
     }
 
-    static List<Item> findByColl(Handle hdl, int collId, QueryParamsMap params) {
+    static List<Item> findByColl(Handle hdl, int collId, QueryParamsMap params, int limit, int offset) {
         String queryString = "select item.* from item, collection2item " +
                              "where item.item_id=collection2item.item_id " +
                              "and collection2item.collection_id= ? " +
-                             "and item.in_archive='1'";
+                             "and item.in_archive='1' order by item.item_id limit ? offset ?";
         return hdl.createQuery(queryString)
-                  .bind(0, collId)
+                  .bind(0, collId).bind(1, limit).bind(2, offset)
                   .map(new ItemMapper(hdl, params)).list();
     }
 
