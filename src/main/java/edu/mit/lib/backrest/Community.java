@@ -93,9 +93,24 @@ public class Community extends DSpaceObject {
                                      .map(new CommunityMapper(hdl, null)).list();
         ArrayList<Community> allResults = new ArrayList<>(results);
         for (Community comm : results) {
-            allResults.addAll(findParents(hdl, new ArrayList<Community>(), comm.id));
+            addUniqueParents(allResults, findParents(hdl, new ArrayList<Community>(), comm.id));
         }
         return allResults;
+    }
+
+    private static void addUniqueParents(List<Community> acc, List<Community> parents) {
+        for (Community parent : parents) {
+            boolean exists = false;
+            for (Community comm : acc) {
+                if (comm.id == parent.id) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (! exists) {
+                acc.add(parent);
+            }
+        }
     }
 
     private static List<Community> findParents(Handle hdl, List<Community> parents, int commId) {
@@ -136,7 +151,7 @@ public class Community extends DSpaceObject {
         List<Community> results = findByColl(hdl, collId);
         ArrayList<Community> allResults = new ArrayList<>(results);
         for (Community comm : results) {
-            allResults.addAll(findParents(hdl, new ArrayList<Community>(), comm.id));
+            addUniqueParents(allResults, findParents(hdl, new ArrayList<Community>(), comm.id));
         }
         return allResults;
     }
