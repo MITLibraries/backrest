@@ -392,7 +392,9 @@ public class Backrest {
                     res.status(404);
                     return "No such collection: " + req.params(":collectionId");
                 } else {
-                    List<Item> items = Item.findByColl(hdl, coll.id, req.queryMap());
+                    QueryParamsMap params = req.queryMap();
+                    List<Item> items = Item.findByColl(hdl, coll.id, params,
+                                            limitFromParam(params), offsetFromParam(params));
                     return acceptXml(req) ? dataToXml(res, new Item.XList(items)) :
                                             dataToJson(res, items);
                 }
@@ -716,12 +718,12 @@ public class Backrest {
     }
 
     static int limitFromParam(QueryParamsMap params) {
-        String limit = params.value("limit");
+        String limit = (params != null) ? params.value("limit") : null;
         return isNullOrEmpty(limit) ? 100 : Integer.valueOf(limit);
     }
 
     static int offsetFromParam(QueryParamsMap params) {
-        String offset = params.value("offset");
+        String offset = (params != null) ? params.value("offset") : null;
         return isNullOrEmpty(offset) ? 0 : Integer.valueOf(offset);
     }
 

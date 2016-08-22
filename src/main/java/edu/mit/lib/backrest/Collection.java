@@ -116,10 +116,14 @@ public class Collection extends DSpaceObject {
         private final List<String> canExpand = new ArrayList<String>(Arrays.asList("parentCommunityList", "parentCommunity", "items", "license", "logo", "all"));
         private final List<String> toExpand;
         private final Handle hdl;
+        private final int limit;
+        private final int offset;
 
         public CollectionMapper(Handle hdl, QueryParamsMap params) {
             this.hdl = hdl;
             this.toExpand = Backrest.toExpandList(params, canExpand);
+            this.limit = Backrest.limitFromParam(params);
+            this.offset = Backrest.offsetFromParam(params);
         }
 
         @Override
@@ -134,7 +138,7 @@ public class Collection extends DSpaceObject {
                 switch (expand) {
                     case "parentCommunityList": parents = Community.findAllByColl(hdl, collId); break;
                     case "parentCommunity": parent = Community.findByColl(hdl, collId).get(0); break;
-                    case "items": items = Item.findByColl(hdl, collId, null); break;
+                    case "items": items = Item.findByColl(hdl, collId, null, limit, offset); break;
                     case "license": license = rs.getString("license"); break;
                     case "logo": logo = Bitstream.findById(hdl, rs.getInt("logo_bitstream_id"), null); break;
                     default: break;
