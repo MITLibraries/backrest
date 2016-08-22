@@ -128,9 +128,11 @@ public class Item extends DSpaceObject {
                   }
             }
             String name = (metadata != null) ? metadata.stream()
-                                              .filter(mdv -> mdv.key.equals("dc.title"))
-                                              .collect(Collectors.toList()).get(0).value
-                                             : "name";
+                                               .filter(mdv -> mdv.key.equals("dc.title"))
+                                               .collect(Collectors.toList()).get(0).value
+                                             : MetadataValue.findByItem(hdl, itemId).stream()
+                                               .filter(mdv -> mdv.key.equals("dc.title"))
+                                               .collect(Collectors.toList()).get(0).value;
             return new Item(itemId, name, DSpaceObject.handleFor(hdl, TYPE, itemId),
                             Boolean.toString(rs.getBoolean("in_archive")),
                             Boolean.toString(rs.getBoolean("withdrawn")),
