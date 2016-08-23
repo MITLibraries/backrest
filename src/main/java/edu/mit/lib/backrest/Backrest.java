@@ -730,19 +730,19 @@ public class Backrest {
     @XmlRootElement(name="status")
     static class Status {
 
-        public boolean ok;
+        public boolean okay;
         public boolean authenticated;
         public String email;
         public String fullname;
         public String token;
 
         Status() {
-            this.ok = true;
+            this.okay = true;
             this.authenticated = false;
         }
 
         Status(String email, String fullname, String token) {
-            this.ok = true;
+            this.okay = true;
             this.authenticated = true;
             this.email = email;
             this.fullname = fullname;
