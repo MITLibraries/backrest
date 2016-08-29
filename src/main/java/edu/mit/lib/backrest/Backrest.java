@@ -575,7 +575,7 @@ public class Backrest {
             // log each request, in more or less 'CLF' aka Apache format
             String clfTime = ZonedDateTime.now().format(clFmt);
             logger.info("{} - - [{}] \"{} {} {}\" {} {}", req.ip(), clfTime, req.requestMethod(),
-                        req.pathInfo(), req.protocol(), res.raw().getStatus(), res.body().length());
+                        req.pathInfo(), req.protocol(), res.raw().getStatus(), res.body());
         });
 
         awaitInitialization();
