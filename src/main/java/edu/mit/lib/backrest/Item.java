@@ -127,12 +127,13 @@ public class Item extends DSpaceObject {
                       default: break;
                   }
             }
-            String name = (metadata != null) ? metadata.stream()
-                                               .filter(mdv -> mdv.key.equals("dc.title"))
-                                               .collect(Collectors.toList()).get(0).value
-                                             : MetadataValue.findByItem(hdl, itemId).stream()
-                                               .filter(mdv -> mdv.key.equals("dc.title"))
-                                               .collect(Collectors.toList()).get(0).value;
+            List<MetadataValue> mdvList = (metadata != null) ? metadata.stream()
+                                          .filter(mdv -> mdv.key.equals("dc.title"))
+                                          .collect(Collectors.toList())
+                                        : MetadataValue.findByItem(hdl, itemId).stream()
+                                          .filter(mdv -> mdv.key.equals("dc.title"))
+                                          .collect(Collectors.toList());
+            String name = mdvList.size() > 0 ? mdvList.get(0).value : "Missing title";
             return new Item(itemId, name, DSpaceObject.handleFor(hdl, TYPE, itemId),
                             Boolean.toString(rs.getBoolean("in_archive")),
                             Boolean.toString(rs.getBoolean("withdrawn")),
