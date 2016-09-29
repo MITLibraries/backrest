@@ -102,7 +102,7 @@ public class ResourcePolicy {
         }
     }
 
-    @XmlRootElement(name="resourcepolicies")
+    @XmlRootElement(name="resourcePolicies")
     static class XList {
         @XmlElement(name="resourcepolicy")
         List<ResourcePolicy> rplist;
