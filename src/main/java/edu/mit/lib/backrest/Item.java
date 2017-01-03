@@ -81,6 +81,16 @@ public class Item extends DSpaceObject {
                   .map(new ItemMapper(hdl, params)).list();
     }
 
+    static List<Item> findByMetadata(Handle hdl, int fieldId, MetadataValue mdv, QueryParamsMap params) {
+        String queryString = "select item.* from item, metadatavalue mdv " +
+                             "where item.item_id = mdv.item_id " +
+                             "and mdv.metadata_field_id = ? " +
+                             "and mdv.text_value = ?";
+        return hdl.createQuery(queryString)
+                  .bind(0, fieldId).bind(1, mdv.value)
+                  .map(new ItemMapper(hdl, params)).list();
+    }
+
     static Item findById(Handle hdl, int itemId, QueryParamsMap params) {
         return hdl.createQuery(SELECT + " where item_id = ?")
                   .bind(0, itemId)

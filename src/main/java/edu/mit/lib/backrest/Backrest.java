@@ -561,6 +561,24 @@ public class Backrest {
             }
         });
 
+        post("/find-by-metadata-field", (req, res) -> {
+            //if (inCache(req)) return fromCache(req, res);
+            MetadataValue mdv = metadataFromRequest(req);
+            try (Handle hdl = dbi.open()) {
+                int fieldId = findFieldId(hdl, mdv.key);
+                if (fieldId != -1) {
+                    List<Item> items = Item.findByMetadata(hdl, fieldId, mdv, req.queryMap());
+                    return acceptXml(req) ? dataToXml(res, new Item.XList(items)) :
+                                            dataToJson(res, items);
+                } else {
+                    res.status(404);
+                    return "No such field: " + req.queryParams("qf");
+                }
+            } catch (Exception e) {
+                return internalError(e, res);
+            }
+        });
+
         enableRouteOverview("/debug/routes");
 
         get("*", (req, res) -> {
@@ -660,6 +678,29 @@ public class Backrest {
             return sw.toString();
         } catch (Exception e) {
             throw new RuntimeException("JAXB Exception: " + e.getMessage());
+        }
+    }
+
+    private static MetadataValue metadataFromRequest(Request req) {
+        String ctype = req.headers("Content-Type");
+        if (null == ctype || ctype.contains("application/xml")) {
+            try {
+                JAXBContext context = JAXBContext.newInstance(MetadataValue.class);
+                Unmarshaller unmarshaller = context.createUnmarshaller();
+                StringBuffer xmlStr = new StringBuffer(req.body());
+                return (MetadataValue)unmarshaller.unmarshal(new StreamSource(new StringReader(xmlStr.toString())));
+            } catch (Exception e) {
+                throw new RuntimeException("JAXB Exception: " + e.getMessage());
+            }
+        } else { // assume it's JSON
+            try {
+                JsonNode jsonMdv = new ObjectMapper().readTree(req.body());
+                return new MetadataValue(-1, jsonMdv.findValue("key").asText(),
+                                         jsonMdv.findValue("value").asText(),
+                                         jsonMdv.findValue("language").asText());
+            } catch (Exception e) {
+                throw new RuntimeException("IOException from ObjectMapper: " + e.getMessage());
+            }
         }
     }
 
