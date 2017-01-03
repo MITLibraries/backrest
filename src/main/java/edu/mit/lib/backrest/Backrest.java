@@ -572,7 +572,7 @@ public class Backrest {
                                             dataToJson(res, items);
                 } else {
                     res.status(404);
-                    return "No such field: " + req.queryParams("qf");
+                    return "Unknown metadata field";
                 }
             } catch (Exception e) {
                 return internalError(e, res);
