@@ -48,7 +48,11 @@ In that case we would launch the service even more simply:
 
     java -jar backrest-all-<version>.jar
 
-By default, the service will listen on port 4567. To change this, set another environment variable:
+By default, the service will listen on any IP address. To bind to a specific one, set the environment variable:
+
+    BACKREST_SVC_HOST=128.45.66.56
+
+Similarly, the service will listen on port 4567 by default. To change this, set another environment variable:
 
     BACKREST_SVC_PORT=8080
 
