@@ -1,7 +1,7 @@
 FROM java:8
 MAINTAINER Helen Bailey <http://orcid.org/0000-0002-1881-2045>
 
-ARG br_ver=1.0.2
+ARG br_ver=1.0.2.1
 
 VOLUME /assetstore
 
