@@ -108,6 +108,10 @@ public class Backrest {
         if (System.getenv("BACKREST_DB_METRICS") != null) {
             dbi.setTimingCollector(new InstrumentedTimingCollector(metrics));
         }
+        // bind to specifc IP address (default is all addresses 0.0.0.0)
+        if (System.getenv("BACKREST_SVC_HOST") != null) {
+            ipAddress(System.getenv("BACKREST_SVC_HOST"));
+        }
         // reassign default port 4567
         if (System.getenv("BACKREST_SVC_PORT") != null) {
             port(Integer.valueOf(System.getenv("BACKREST_SVC_PORT")));
@@ -561,7 +565,7 @@ public class Backrest {
             }
         });
 
-        post("/find-by-metadata-field", (req, res) -> {
+        post("/items/find-by-metadata-field", (req, res) -> {
             //if (inCache(req)) return fromCache(req, res);
             MetadataValue mdv = metadataFromRequest(req);
             try (Handle hdl = dbi.open()) {
@@ -695,9 +699,10 @@ public class Backrest {
         } else { // assume it's JSON
             try {
                 JsonNode jsonMdv = new ObjectMapper().readTree(req.body());
+                String lang = jsonMdv.has("language") ? jsonMdv.findValue("language").asText() : "";
                 return new MetadataValue(-1, jsonMdv.findValue("key").asText(),
                                          jsonMdv.findValue("value").asText(),
-                                         jsonMdv.findValue("language").asText());
+                                         lang);
             } catch (Exception e) {
                 throw new RuntimeException("IOException from ObjectMapper: " + e.getMessage());
             }
