@@ -1,7 +1,6 @@
 # backrest - Read-only backport of the REST API for earlier DSpace systems #
 
-[![Build Status](https://travis-ci.org/MITLibraries/backrest.svg?branch=master)]
-(https://travis-ci.org/MITLibraries/backrest)
+[![Build Status](https://travis-ci.org/MITLibraries/backrest.svg?branch=master)](https://travis-ci.org/MITLibraries/backrest)
 [![Dependency Status](https://dependencyci.com/github/MITLibraries/backrest/badge)]
 (https://dependencyci.com/github/MITLibraries/backrest)
 
